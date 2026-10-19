@@ -11,11 +11,12 @@ Use this skill when preparing, creating, or updating a pull request for the OG L
 
 1. Keep implementation work on a feature branch; do not commit implementation directly to `main`.
 2. Open every pull request with `main` as its base branch.
-3. Treat `main` as the server branch for development: changes merged into `main` are automatically deployed to the development environment by the pipeline.
-4. Production deployment is a separate, permission-controlled action. Only people authorized to promote releases may deploy changes from `main` to production through the production pipeline.
-5. A pull request does not itself deploy to production. Do not merge a pull request, trigger a deployment, or claim a production release as part of opening the PR unless explicitly requested and authorized.
-6. Before opening the PR, inspect the branch diff against `main`, check the working tree, and run relevant tests or checks. Report checks that could not be run; never claim a check passed without evidence.
-7. Before opening the PR, complete the project-wide [customization and architecture consistency review](../../../AGENTS.md#customization-and-architecture-consistency), including a fresh inventory of all project instructions, skills, and custom agents against the final branch state.
+3. Treat the desired flow as automatic deployment to development after changes reach `main` and manually approved production deployment. Do not claim either is operational until the hosting platform and deploy steps are configured; current deployment jobs fail explicitly while that setup is pending.
+4. GitHub workflow status checks do not by themselves block merging. Check the [CI/CD guide](../../../docs/ci-cd.md) for the branch-protection/ruleset settings required to enforce checks and reviews, and report accurately if those settings have not been applied.
+5. Production deployment requires a configured GitHub `production` environment with required reviewers as well as a protected, working deployment job. Declaring an environment in YAML alone does not enforce approval.
+6. A pull request does not itself deploy to production. Do not merge a pull request, trigger a deployment, or claim a production release as part of opening the PR unless explicitly requested and authorized.
+7. Before opening the PR, inspect the branch diff against `main`, check the working tree, and run relevant tests or checks. Report checks that could not be run; never claim a check passed without evidence.
+8. Before opening the PR, complete the project-wide [customization and architecture consistency review](../../../AGENTS.md#customization-and-architecture-consistency), including a fresh inventory of all project instructions, skills, and custom agents against the final branch state.
 
 ## Pull request title and description
 

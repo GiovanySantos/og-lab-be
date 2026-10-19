@@ -1,10 +1,17 @@
-name: CI
+name: CI/CD
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -61,3 +68,32 @@ jobs:
         run: npm ci
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
+
+  deploy-development:
+    name: Deploy to development (target not configured)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - type-safety
+      - unit-tests
+      - dependency-audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report missing deployment configuration
+        run: |
+          echo "::error title=Deployment target not configured::Select a development hosting platform and configure its deployment credentials before enabling this job."
+          exit 1
+
+  deploy-production:
+    name: Deploy to production (target not configured)
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs:
+      - type-safety
+      - unit-tests
+      - dependency-audit
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report missing deployment configuration
+        run: |
+          echo "::error title=Deployment target not configured::Select a production hosting platform, configure deployment credentials, and require production environment approval before enabling this job."
+          exit 1

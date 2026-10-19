@@ -34,7 +34,9 @@ comments, and inline ESLint configuration. TypeScript's strict compiler checks
 apply to both application and test code.
 
 The GitHub Actions workflow runs type-safety/build checks, unit tests, and a
-dependency audit in separate CI jobs; any failed check fails the workflow.
+dependency audit in separate CI jobs. See the [CI/CD guide](docs/ci-cd.md) for
+required GitHub merge-protection settings and the deployment configuration
+that remains pending selection of hosting platforms.
 
 Non-standard dependency choices, version decisions, overrides, and package
 patches are documented in the [dependency decision ledger](docs/dependency-decisions.md).

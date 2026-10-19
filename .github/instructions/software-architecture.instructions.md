@@ -14,6 +14,7 @@ These instructions define the architectural direction for the OG Lab social netw
 - Supabase is the first external service. Keep its integration replaceable and allow new external providers without leaking vendor details into business rules.
 - Caching is a future capability. Do not add Redis, in-memory cache components, or cache wiring unless a task explicitly requires implementing that capability. Before implementing it, get an explicit decision on the applicable policy and record unresolved decisions; never invent cache precedence, TTLs, invalidation, or strategy. If introduced, keep cache implementations replaceable and out of direct domain dependencies.
 - Express is the selected HTTP framework. Jest with ts-jest and V8 coverage is the selected unit test and coverage tool. TypeScript's compiler is the build tool; npm scripts define the supported build and quality commands. No DI library has been selected: inject dependencies explicitly and compose concrete dependencies at the application entry point without introducing a container unless separately decided.
+- GitHub Actions runs CI for pull requests targeting `main`. Development and production deployment jobs are explicit failing placeholders until a hosting platform and credentials are chosen. GitHub workflow files do not configure branch-protection rules or required environment reviewers; consult `docs/ci-cd.md` for the repository settings needed to enforce these policies.
 
 ## Layers and responsibilities
 
