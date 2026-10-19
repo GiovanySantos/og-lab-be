@@ -9,7 +9,7 @@ Before changing dependency manifests, lockfiles, package patches, overrides, or 
 - Use English for all project artifacts and agent communication, including source code, tests, comments, documentation, commit messages, branch/PR descriptions, and AI usage disclosures. Use another language only when explicitly requested or required by an external interface.
 - The selected initial stack is Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. Check `package.json` and the checked-in tool configurations for current versions and commands; do not rely on stale version examples in guidance.
 - The application is implemented under `src/`, with Jest unit tests under `test/`; retain these locations unless a documented architecture decision changes them.
-- CI runs on pull requests targeting `main`; inspect `.github/workflows/ci.yml` and `docs/ci-cd.md` for required status checks, deployment status, and repository settings still needed to enforce merge and deployment approvals.
+- GitHub Actions CI/CD is currently disabled. Before pushing any branch or opening/updating a pull request, run `npm run pipeline` and require it to pass. See `docs/ci-cd.md` for the exact checks and current enforcement limitations.
 - Supabase is the first external service; the architecture must allow other services to be added without coupling business rules to vendors.
 - Caching is a future capability, not a requirement to add Redis or in-memory cache components to every change. Do not implement or wire caching until a task explicitly requires it and the applicable policy is decided; never invent cache precedence, TTLs, invalidation, or strategy.
 - Preserve the layer and dependency rules in the architecture instructions. Declare repository ports in the domain, implement them in repository adapters, inject dependencies explicitly, and construct concrete dependencies at a composition root.
@@ -23,6 +23,13 @@ Before changing dependency manifests, lockfiles, package patches, overrides, or 
 - Treat newly added or changed framework, runtime, package, test, build, CI, source-layout, architectural-layer, and security-policy choices as triggers for this consistency review. Do not limit review to files directly matched by an instruction's `applyTo`.
 - When changing or adding a project skill or custom agent, review the other project skills and custom agents too, so shared workflows and responsibilities remain consistent.
 - Do not rewrite guidance that remains accurate. If a requested change leaves a real conflict unresolved, explain the conflict instead of claiming the review is complete.
+
+## Local quality gate before publishing
+
+- Before **every `git push`** and before **opening or updating any pull request**, run `npm run pipeline` from the repository root and require a successful exit. This applies to implementation changes and documentation-only changes.
+- If the pipeline fails, do not push or open/update the PR. Fix the failure, rerun the entire `npm run pipeline`, and only proceed after it passes. If it cannot be run because prerequisites or external services are unavailable, stop before publishing and report the blocker; do not claim it passed.
+- `npm run pipeline` performs a clean lockfile install (`npm ci`), lint, strict type-check, Jest tests with enforced coverage, production build, and moderate-or-higher npm audit. Do not replace it with only a subset of checks.
+- GitHub Actions is currently disabled, so local validation is the required gate. Do not assume GitHub can enforce this command as a required status check.
 
 ## Cross-agent usage
 

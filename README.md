@@ -21,22 +21,22 @@ The `GET /health` endpoint returns the service health status.
 ## Quality checks
 
 ```sh
-npm run lint
-npm run typecheck
-npm test -- --ci
-npm run build
+npm run pipeline
 ```
 
-The Jest suite enforces 100% statement, branch, function, and line coverage for
-production TypeScript files. ESLint rejects explicit `any`, `unknown`, and
-`never` types, type assertions, non-null assertions, TypeScript suppression
-comments, and inline ESLint configuration. TypeScript's strict compiler checks
-apply to both application and test code.
+This command installs exactly the versions in `package-lock.json`, then runs
+ESLint, strict TypeScript checks, Jest unit tests with 100% statement, branch,
+function, and line coverage, the production build, and an npm audit that fails
+on moderate-or-higher vulnerabilities.
 
-The GitHub Actions workflow runs type-safety/build checks, unit tests, and a
-dependency audit in separate CI jobs. See the [CI/CD guide](docs/ci-cd.md) for
-required GitHub merge-protection settings and the deployment configuration
-that remains pending selection of hosting platforms.
+ESLint rejects explicit `any`, `unknown`, and `never` types, type assertions,
+non-null assertions, TypeScript suppression comments, and inline ESLint
+configuration. TypeScript's strict compiler checks apply to application and
+test code.
 
 Non-standard dependency choices, version decisions, overrides, and package
 patches are documented in the [dependency decision ledger](docs/dependency-decisions.md).
+
+Run `npm run pipeline` before pushing a branch or opening/updating a pull
+request. GitHub Actions and automated deployment are currently disabled;
+quality checks must be run locally.

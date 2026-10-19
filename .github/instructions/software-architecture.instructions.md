@@ -10,11 +10,11 @@ These instructions define the architectural direction for the OG Lab social netw
 ## Language, goals, and technologies
 
 - English is the project's default language. Use it for source code, tests, comments, documentation, agent communication, and engineering artifacts unless explicitly requested otherwise or required by an external interface.
-- The project is a Node.js monolithic backend written in TypeScript. Its initial implementation uses Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. The application is under `src/`, with unit tests under `test/`. Consult `package.json`, the TypeScript/Jest/ESLint configuration, and the CI workflow for the exact supported versions and commands; update this instruction if those decisions change.
+- The project is a Node.js monolithic backend written in TypeScript. Its initial implementation uses Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. The application is under `src/`, with unit tests under `test/`. Consult `package.json` and the TypeScript/Jest/ESLint configuration for the exact supported versions and commands; update this instruction if those decisions change.
 - Supabase is the first external service. Keep its integration replaceable and allow new external providers without leaking vendor details into business rules.
 - Caching is a future capability. Do not add Redis, in-memory cache components, or cache wiring unless a task explicitly requires implementing that capability. Before implementing it, get an explicit decision on the applicable policy and record unresolved decisions; never invent cache precedence, TTLs, invalidation, or strategy. If introduced, keep cache implementations replaceable and out of direct domain dependencies.
 - Express is the selected HTTP framework. Jest with ts-jest and V8 coverage is the selected unit test and coverage tool. TypeScript's compiler is the build tool; npm scripts define the supported build and quality commands. No DI library has been selected: inject dependencies explicitly and compose concrete dependencies at the application entry point without introducing a container unless separately decided.
-- GitHub Actions runs CI for pull requests targeting `main`. Development and production deployment jobs are explicit failing placeholders until a hosting platform and credentials are chosen. GitHub workflow files do not configure branch-protection rules or required environment reviewers; consult `docs/ci-cd.md` for the repository settings needed to enforce these policies.
+- GitHub Actions CI/CD is currently disabled. The local quality gate is `npm run pipeline`; run it before pushing changes or opening/updating a pull request. Consult `docs/ci-cd.md` for its contents and deployment status.
 
 ## Layers and responsibilities
 
@@ -45,4 +45,4 @@ The feed flow is a future architecture example, not an implemented feature: a fu
 - Test domain rules in isolation with injected repository doubles; test repositories with substituted clients; test clients with isolated external dependencies wherever practical.
 - Include relevant success, failure, and boundary paths. Coverage does not replace behavioral assertions.
 - Jest enforces 100% statement, branch, function, and line coverage for production code. Keep this threshold enabled in `jest.config.cjs`; do not weaken it or exclude production code to meet it.
-- The current test runner is Jest with `ts-jest`, using the V8 coverage provider. Run `npm test -- --ci` for the CI test command; consult `package.json`, `jest.config.cjs`, and `.github/workflows/ci.yml` if commands or configuration change.
+- The current test runner is Jest with `ts-jest`, using the V8 coverage provider. `npm run pipeline` runs the complete local quality gate; consult `package.json`, `jest.config.cjs`, and `docs/ci-cd.md` if commands or checks change.

@@ -12,7 +12,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "jest --coverage",
-    "check": "npm run lint && npm run typecheck && npm test -- --ci && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test -- --ci && npm run build",
+    "pipeline": "npm ci && npm run check && npm audit --audit-level=moderate"
   },
   "dependencies": {
     "express": "^5.3.0"
