@@ -15,6 +15,10 @@ npm run build
 npm start
 ```
 
+During development, use `npm run watch` to rebuild and restart the server when
+TypeScript source files change. The server logs its listening URL and each
+completed HTTP request with its method, path, status, and duration.
+
 The server listens on port `3000` by default. Set `PORT` to use another port.
 The `GET /health` endpoint returns the service health status.
 
