@@ -1,2 +1,3 @@
-# og-lab-be
-OG Lab social media backend app
+# OG Lab 
+
+Esse é um projeto de backend monolítico em NodeJS para a comunidade OG Lab 
