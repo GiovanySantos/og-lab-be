@@ -9,7 +9,7 @@ Use this skill when asked to explain, assess, or apply the OG Lab backend archit
 
 ## Procedure
 
-1. Read the [architecture instructions](../../instructions/software-architecture.instructions.md) and use them as the source of truth.
+1. Read the [architecture instructions](../../../.github/instructions/software-architecture.instructions.md) and use them as the source of truth.
 2. Identify the flow or responsibility in question and place it in the appropriate layer:
    - transport entry points and routing;
    - business rules and use cases (`domain`);
