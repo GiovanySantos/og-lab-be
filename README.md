@@ -1,3 +1,3 @@
-# OG Lab 
+# OG Lab Backend
 
-Esse é um projeto de backend monolítico em NodeJS para a comunidade OG Lab 
+This is the planned monolithic backend for the OG Lab community.
