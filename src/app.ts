@@ -1,4 +1,9 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, {
+  type Express,
+  type NextFunction,
+  type Request,
+  type Response,
+} from 'express';
 
 type HealthResponse = {
   status: 'ok';
@@ -6,6 +11,24 @@ type HealthResponse = {
 
 export function createApp(): Express {
   const app = express();
+
+  app.use(
+    (
+      request: Request,
+      response: Response,
+      next: NextFunction,
+    ): void => {
+      const startedAt = Date.now();
+
+      response.on('finish', () => {
+        console.info(
+          `[HTTP] ${request.method} ${request.originalUrl} ${String(response.statusCode)} ${String(Date.now() - startedAt)}ms`,
+        );
+      });
+
+      next();
+    },
+  );
 
   app.get(
     '/health',

@@ -21,6 +21,7 @@ describe('application entry point', () => {
 
     jest.resetModules();
     jest.dontMock('../app.js');
+    jest.restoreAllMocks();
   });
 
   it.each(portCases)(
@@ -30,6 +31,7 @@ describe('application entry point', () => {
       const listen = jest
         .spyOn(app, 'listen')
         .mockReturnValue(createServer());
+      const log = jest.spyOn(console, 'info').mockImplementation(() => undefined);
 
       if (port === undefined) {
         delete process.env['PORT'];
@@ -44,7 +46,17 @@ describe('application entry point', () => {
         jest.requireActual('../index.js');
       });
 
-      expect(listen).toHaveBeenCalledWith(expectedPort);
+      expect(listen).toHaveBeenCalledWith(expectedPort, expect.any(Function));
+
+      const onListening = listen.mock.calls[0]?.[1];
+
+      if (typeof onListening === 'function') {
+        onListening();
+      }
+
+      expect(log).toHaveBeenCalledWith(
+        `Server running at http://localhost:${String(expectedPort)}`,
+      );
     },
   );
 });
