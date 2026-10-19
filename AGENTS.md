@@ -8,7 +8,7 @@ Before changing dependency manifests, lockfiles, package patches, overrides, or 
 
 - Use English for all project artifacts and agent communication, including source code, tests, comments, documentation, commit messages, branch/PR descriptions, and AI usage disclosures. Use another language only when explicitly requested or required by an external interface.
 - The selected initial stack is Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. Check `package.json` and the checked-in tool configurations for current versions and commands; do not rely on stale version examples in guidance.
-- The application is implemented under `src/`, with Jest unit tests under `test/`; retain these locations unless a documented architecture decision changes them.
+- The application is implemented under `src/`; place Jest unit tests in a `__tests__` directory within the source path they cover (for example, `src/__tests__/` for files directly under `src/`).
 - GitHub Actions CI/CD is currently disabled. Before pushing any branch or opening/updating a pull request, run `npm run pipeline` and require it to pass. See `docs/ci-cd.md` for the exact checks and current enforcement limitations.
 - Supabase is the first external service; the architecture must allow other services to be added without coupling business rules to vendors.
 - Caching is a future capability, not a requirement to add Redis or in-memory cache components to every change. Do not implement or wire caching until a task explicitly requires it and the applicable policy is decided; never invent cache precedence, TTLs, invalidation, or strategy.
@@ -30,6 +30,7 @@ Before changing dependency manifests, lockfiles, package patches, overrides, or 
 - If the pipeline fails, do not push or open/update the PR. Fix the failure, rerun the entire `npm run pipeline`, and only proceed after it passes. If it cannot be run because prerequisites or external services are unavailable, stop before publishing and report the blocker; do not claim it passed.
 - `npm run pipeline` performs a clean lockfile install (`npm ci`), lint, strict type-check, Jest tests with enforced coverage, production build, and moderate-or-higher npm audit. Do not replace it with only a subset of checks.
 - GitHub Actions is currently disabled, so local validation is the required gate. Do not assume GitHub can enforce this command as a required status check.
+- After `npm run pipeline` passes for the requested changes, commit those changes and push the commit to the current feature branch by default. Do not push directly to `main`. If the user explicitly asks not to commit or push, or publication is blocked, honor that instruction and explain the outcome.
 
 ## Cross-agent usage
 

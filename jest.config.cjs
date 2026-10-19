@@ -1,6 +1,6 @@
 module.exports = {
   clearMocks: true,
-  collectCoverageFrom: ['src/**/*.ts'],
+  collectCoverageFrom: ['src/**/*.ts', '!src/**/__tests__/**/*.ts'],
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
   coverageThreshold: {
@@ -15,7 +15,7 @@ module.exports = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   preset: 'ts-jest',
-  roots: ['<rootDir>/test'],
+  roots: ['<rootDir>/src'],
   testEnvironment: 'node',
-  testMatch: ['**/*.test.ts'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
 };

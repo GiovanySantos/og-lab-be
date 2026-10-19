@@ -10,7 +10,7 @@ These instructions define the architectural direction for the OG Lab social netw
 ## Language, goals, and technologies
 
 - English is the project's default language. Use it for source code, tests, comments, documentation, agent communication, and engineering artifacts unless explicitly requested otherwise or required by an external interface.
-- The project is a Node.js monolithic backend written in TypeScript. Its initial implementation uses Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. The application is under `src/`, with unit tests under `test/`. Consult `package.json` and the TypeScript/Jest/ESLint configuration for the exact supported versions and commands; update this instruction if those decisions change.
+- The project is a Node.js monolithic backend written in TypeScript. Its initial implementation uses Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. The application is under `src/`; colocate unit tests in `__tests__` directories within the source path they cover. Consult `package.json` and the TypeScript/Jest/ESLint configuration for the exact supported versions, layout, and commands; update this instruction if those decisions change.
 - Supabase is the first external service. Keep its integration replaceable and allow new external providers without leaking vendor details into business rules.
 - Caching is a future capability. Do not add Redis, in-memory cache components, or cache wiring unless a task explicitly requires implementing that capability. Before implementing it, get an explicit decision on the applicable policy and record unresolved decisions; never invent cache precedence, TTLs, invalidation, or strategy. If introduced, keep cache implementations replaceable and out of direct domain dependencies.
 - Express is the selected HTTP framework. Jest with ts-jest and V8 coverage is the selected unit test and coverage tool. TypeScript's compiler is the build tool; npm scripts define the supported build and quality commands. No DI library has been selected: inject dependencies explicitly and compose concrete dependencies at the application entry point without introducing a container unless separately decided.
@@ -41,6 +41,7 @@ The feed flow is a future architecture example, not an implemented feature: a fu
 ## Testing
 
 - Every production code file must have unit tests. Production code means code shipped or executed as part of the running application. The only production-code exception is a file named `index` that contains only re-exports.
+- Place tests under `__tests__` directories next to the source path they cover. For example, `src/__tests__/` contains tests for files directly under `src/`; tests for files under `src/domain/` belong under `src/domain/__tests__/`.
 - Require 100% statement, branch, function, and line coverage for production code. Do not exclude code to meet the target; only pure re-export barrels may be omitted.
 - Test domain rules in isolation with injected repository doubles; test repositories with substituted clients; test clients with isolated external dependencies wherever practical.
 - Include relevant success, failure, and boundary paths. Coverage does not replace behavioral assertions.

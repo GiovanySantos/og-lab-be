@@ -14,7 +14,9 @@ failure:
 2. `npm run lint` rejects type escapes, assertions, and lint suppressions.
 3. `npm run typecheck` checks the application and tests with strict TypeScript.
 4. `npm test -- --ci` runs Jest and enforces 100% statement, branch, function,
-   and line coverage.
+   and line coverage. Jest discovers `*.test.ts` files inside source
+   `__tests__` directories; those test files are excluded from production
+   coverage and the build output.
 5. `npm run build` compiles the production application.
 6. `npm audit --audit-level=moderate` fails on moderate- or higher-severity
    dependency advisories.

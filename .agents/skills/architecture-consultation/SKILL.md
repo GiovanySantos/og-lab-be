@@ -19,7 +19,7 @@ Use this skill when asked to explain, assess, or apply the OG Lab backend archit
 4. Describe the dependency and call path. The feed flow in the instructions is a future example, not an implemented feature.
 5. Check that dependencies are injected and external details stay at the edges. Identify cross-layer coupling or business rules placed in clients or routes.
 6. Distinguish established decisions from open questions. Use the selected stack and project configuration where they exist; do not invent a DI library, cache policy, TTL, invalidation strategy, API contract, or physical source layout.
-7. When recommending a change, identify the unit tests needed to preserve the 100% coverage target defined in the instructions.
+7. When recommending a change, identify the unit tests needed to preserve the 100% coverage target defined in the instructions and place them in a `__tests__` directory within the source path they cover.
 
 ## Boundaries
 

@@ -20,7 +20,7 @@ describe('application entry point', () => {
     }
 
     jest.resetModules();
-    jest.dontMock('../src/app.js');
+    jest.dontMock('../app.js');
   });
 
   it.each(portCases)(
@@ -38,10 +38,10 @@ describe('application entry point', () => {
       }
 
       jest.isolateModules(() => {
-        jest.doMock('../src/app.js', () => ({
+        jest.doMock('../app.js', () => ({
           createApp: () => app,
         }));
-        jest.requireActual('../src/index.js');
+        jest.requireActual('../index.js');
       });
 
       expect(listen).toHaveBeenCalledWith(expectedPort);
