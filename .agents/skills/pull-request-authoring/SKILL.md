@@ -15,6 +15,7 @@ Use this skill when preparing, creating, or updating a pull request for the OG L
 4. Production deployment is a separate, permission-controlled action. Only people authorized to promote releases may deploy changes from `main` to production through the production pipeline.
 5. A pull request does not itself deploy to production. Do not merge a pull request, trigger a deployment, or claim a production release as part of opening the PR unless explicitly requested and authorized.
 6. Before opening the PR, inspect the branch diff against `main`, check the working tree, and run relevant tests or checks. Report checks that could not be run; never claim a check passed without evidence.
+7. Before opening the PR, complete the project-wide [customization and architecture consistency review](../../../AGENTS.md#customization-and-architecture-consistency), including a fresh inventory of all project instructions, skills, and custom agents against the final branch state.
 
 ## Pull request title and description
 
