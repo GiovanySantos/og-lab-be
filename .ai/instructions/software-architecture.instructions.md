@@ -1,39 +1,40 @@
-# Instrução de arquitetura de software
+# Software architecture instructions
 
-Estas instruções definem a arquitetura inicial do backend da rede social OG Lab. Consulte-as ao criar, alterar ou revisar código e documentação de arquitetura.
+These instructions define the initial architecture for the OG Lab social network backend. Follow them when creating, changing, or reviewing code and architecture documentation.
 
-## Objetivos e tecnologias
+## Language, goals, and technologies
 
-- O projeto é um backend monolítico em Node.js e TypeScript. Use a versão estável mais recente do TypeScript que seja compatível com as dependências e ferramentas escolhidas.
-- Supabase é o primeiro serviço externo. Mantenha a integração substituível e permita adicionar provedores externos sem levar detalhes do fornecedor para as regras de negócio.
-- O sistema terá cache em memória e Redis. Trate-os como implementações substituíveis, não como dependências diretas do domínio. A política, a precedência, os TTLs e a estratégia de invalidação ainda precisam ser decididos; não invente esses requisitos.
-- Não assuma framework HTTP, biblioteca de DI, biblioteca de testes, estrutura de diretórios de código ou ferramenta de build até que o projeto as escolha.
+- English is the project's default language. Use it for source code, tests, comments, documentation, agent communication, and engineering artifacts unless explicitly requested otherwise or required by an external interface.
+- The project is a Node.js monolithic backend written in TypeScript. Use the latest stable TypeScript version compatible with the selected dependencies and tools.
+- Supabase is the first external service. Keep its integration replaceable and allow new external providers without leaking vendor details into business rules.
+- The system will use in-memory caching and Redis. Treat them as replaceable implementations, not direct domain dependencies. Cache policy, precedence, TTLs, and invalidation strategy are undecided; do not invent these requirements.
+- Do not assume an HTTP framework, DI library, test library, source directory layout, or build tool until the project selects one.
 
-## Camadas e responsabilidades
+## Layers and responsibilities
 
-O fluxo de dependências parte da entrada da aplicação e segue para dentro:
+The dependency flow starts at application entry points and proceeds inward:
 
-`rotas/entrada → domain → repositories → clients/adapters → serviços externos`
+`routes/entry points → domain → repositories → clients/adapters → external services`
 
-1. **Rotas/entrada:** recebem e validam a entrada de transporte, chamam o caso de uso/domain apropriado e traduzem o resultado para a resposta de transporte. Não implementam regras de negócio nem acessam diretamente repositories ou clients.
-2. **Domain:** implementa regras e casos de uso do negócio. Recebe por injeção os repositories necessários, sem conhecer protocolos, SDKs ou modelos específicos de fornecedores.
-3. **Repositories:** adaptam os contratos de acesso a dados e serviços às necessidades do negócio. Recebem por injeção os clients necessários; convertem dados externos para contratos usados pelo domínio e mantêm detalhes de integração fora dele.
-4. **Clients/adapters:** encapsulam comunicação com serviços externos, como consultas ao Supabase por REST, GraphQL ou banco de dados, e implementações de cache em memória e Redis. Não contêm regras de negócio.
+1. **Routes/entry points:** receive and validate transport input, call the appropriate domain use case, and translate its result into a transport response. They do not implement business rules or access repositories or clients directly.
+2. **Domain:** implements business rules and use cases. It receives required repositories through injection and does not know vendor protocols, SDKs, or vendor-specific models.
+3. **Repositories:** adapt data-access and service contracts to business needs. They receive required clients through injection, convert external data into contracts used by the domain, and keep integration details out of it.
+4. **Clients/adapters:** encapsulate communication with external services, such as Supabase REST, GraphQL, or database queries, and in-memory or Redis cache implementations. They contain no business rules.
 
-Use o fluxo de feed como exemplo: a rota de feed chama o domínio/caso de uso de feed; esse domínio usa o repository de feed injetado; o repository chama o client do Supabase injetado e adapta a resposta ao contrato esperado pelo domínio.
+Use the feed flow as an example: the feed route calls the feed domain/use case; that domain uses its injected feed repository; the repository calls its injected Supabase client and adapts the response to the contract expected by the domain.
 
-## Injeção e direção de dependências
+## Dependency injection and direction
 
-- Injete as dependências necessárias em cada camada; evite singletons implícitos, acesso global a serviços e service locators.
-- A camada de entrada depende do domínio; o domínio depende de contratos de repositories; repositories dependem de contratos de clients/adapters. Implementações concretas ficam nas bordas.
-- Construa e conecte as implementações concretas em um ponto de composição da aplicação. Não espalhe a criação de dependências pelas regras de negócio.
-- Mantenha os contratos pequenos e orientados aos casos de uso dos consumidores. Evite expor SDKs ou tipos de fornecedor através das camadas.
-- Se uma decisão sobre localização ou contrato de uma abstração não estiver definida, mantenha a separação acima e registre a dúvida em vez de assumir uma regra de negócio.
+- Inject the dependencies required by each layer; avoid implicit singletons, global service access, and service locators.
+- Entry points depend on the domain; the domain depends on repository contracts; repositories depend on client/adapter contracts. Concrete implementations stay at the edges.
+- Construct and connect concrete implementations at an application composition root. Do not spread dependency creation through business rules.
+- Keep contracts small and oriented around consumer use cases. Do not expose SDKs or vendor types across layers.
+- If the location or contract of an abstraction is undecided, preserve the separation above and record the open question instead of assuming a business rule.
 
-## Testes
+## Testing
 
-- Todo arquivo de código de produção deve ter testes unitários; arquivos `index` que apenas reexportam módulos estão excluídos.
-- A meta é 100% de cobertura de statements, branches, functions e lines para o código de produção incluído na cobertura. Não exclua código para atingir a meta; somente os barrels de reexportação puros podem ficar de fora.
-- Teste regras de domínio isoladamente, substituindo repositories por doubles injetados; teste repositories com clients substituídos; teste clients com dependências externas isoladas sempre que viável.
-- Inclua caminhos de sucesso, falha e limites relevantes. Cobertura não substitui asserções sobre comportamento.
-- Antes de alterar configurações de cobertura ou adicionar ferramentas, confira a configuração existente e preserve os padrões adotados pelo projeto.
+- Every production code file must have unit tests; files named `index` that only re-export modules are excluded.
+- The target is 100% statement, branch, function, and line coverage for production code included in coverage. Do not exclude code to meet the target; only pure re-export barrels may be omitted.
+- Test domain rules in isolation with injected repository doubles; test repositories with substituted clients; test clients with isolated external dependencies wherever practical.
+- Include relevant success, failure, and boundary paths. Coverage does not replace behavioral assertions.
+- Before changing coverage configuration or adding tools, inspect the existing setup and preserve project conventions.

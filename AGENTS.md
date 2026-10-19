@@ -1,17 +1,17 @@
 # OG Lab Backend
 
-Este repositório contém o backend monolítico em Node.js da rede social OG Lab. Este arquivo é o ponto de entrada para agentes de programação de qualquer fornecedor: antes de trabalhar no projeto, leia as instruções de arquitetura em [`.ai/instructions/software-architecture.instructions.md`](.ai/instructions/software-architecture.instructions.md). Para perguntas, análises ou decisões sobre a arquitetura, consulte também a skill [`.ai/skills/architecture-consultation/SKILL.md`](.ai/skills/architecture-consultation/SKILL.md).
+This repository contains the Node.js monolithic backend for the OG Lab social network. This file is the shared entry point for coding agents from any provider. Before working on the project, read the architecture instructions in [`.ai/instructions/software-architecture.instructions.md`](.ai/instructions/software-architecture.instructions.md). For architecture questions, analysis, or decisions, consult the [architecture consultation skill](.ai/skills/architecture-consultation/SKILL.md). When preparing a pull request, follow the [pull request authoring skill](.ai/skills/pull-request-authoring/SKILL.md) and the GitHub [pull request template](.github/PULL_REQUEST_TEMPLATE.md).
 
-## Diretrizes do projeto
+## Project guidelines
 
-- O backend será desenvolvido em TypeScript, usando a versão estável mais recente compatível com as dependências e ferramentas adotadas pelo projeto.
-- Supabase é o primeiro serviço externo; a arquitetura deve permitir adicionar outros serviços sem acoplar regras de negócio a fornecedores.
-- Redis e cache em memória fazem parte dos requisitos de cache. A política de cache e os detalhes de implementação ainda não estão definidos; não presuma TTLs, estratégias ou precedência sem uma decisão explícita.
-- Preserve a separação entre entrada/rotas, domínio, repositories e clients, descrita na instrução de arquitetura. Injete dependências explicitamente e monte o grafo de dependências em um ponto de composição.
-- Todo arquivo de código de produção deve ter testes unitários. A meta é 100% de cobertura; arquivos `index` que apenas reexportam módulos são a única exceção. Mudanças futuras devem preservar essa meta e acrescentar testes para novos comportamentos e caminhos de erro.
-- Não presuma framework HTTP, biblioteca de injeção de dependências, organização de pastas de código, biblioteca de testes, comandos de build ou convenções de API que ainda não tenham sido escolhidos. Consulte os arquivos e configurações existentes antes de propor ou adicionar ferramentas.
-- Mantenha documentação, instruções e skills em português, salvo quando um formato ou identificador técnico exigir outro idioma.
+- English is the project's default language and must be used for all project artifacts and agent communication, including source code, tests, comments, documentation, commit messages, branch/PR descriptions, and AI usage disclosures. Use another language only when explicitly requested or required by an external interface.
+- The backend will use TypeScript, using the latest stable version compatible with the dependencies and tools adopted by the project.
+- Supabase is the first external service; the architecture must allow other services to be added without coupling business rules to vendors.
+- Redis and in-memory caching are requirements. Cache policies and implementation details have not yet been decided; do not assume TTLs, strategies, or precedence without an explicit decision.
+- Preserve the separation between entry points/routes, domain, repositories, and clients described in the architecture instructions. Inject dependencies explicitly and construct the dependency graph at a composition root.
+- Every production code file must have unit tests. The target is 100% coverage; files named `index` that only re-export modules are the sole exception. Preserve this target and add tests for new behavior and error paths.
+- Do not assume an HTTP framework, dependency injection library, source directory layout, test library, build commands, or API conventions that have not yet been selected. Inspect existing files and configuration before proposing or adding tools.
 
-## Uso por diferentes agentes
+## Cross-agent usage
 
-Considere este `AGENTS.md` e os documentos referenciados como as diretrizes compartilhadas do projeto, independentemente do fornecedor ou editor. Se uma ferramenta tiver um mecanismo próprio para instruções ou skills, use-o como mecanismo de descoberta, mas mantenha estes documentos como fonte de verdade e não duplique seu conteúdo.
+Treat this `AGENTS.md` and its referenced documents as the shared project guidelines regardless of agent provider or editor. If a tool has its own discovery mechanism for instructions or skills, use it for discovery while keeping these documents as the source of truth and avoiding duplicated content.
