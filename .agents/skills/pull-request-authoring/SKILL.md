@@ -11,10 +11,12 @@ Use this skill when preparing, creating, or updating a pull request for the OG L
 
 1. Keep implementation work on a feature branch; do not commit implementation directly to `main`.
 2. Open every pull request with `main` as its base branch.
-3. Treat `main` as the server branch for development: changes merged into `main` are automatically deployed to the development environment by the pipeline.
-4. Production deployment is a separate, permission-controlled action. Only people authorized to promote releases may deploy changes from `main` to production through the production pipeline.
-5. A pull request does not itself deploy to production. Do not merge a pull request, trigger a deployment, or claim a production release as part of opening the PR unless explicitly requested and authorized.
-6. Before opening the PR, inspect the branch diff against `main`, check the working tree, and run relevant tests or checks. Report checks that could not be run; never claim a check passed without evidence.
+3. GitHub Actions CI/CD is currently disabled. Run `npm run pipeline` from the repository root and require it to pass immediately before opening or updating the PR. Do not substitute partial checks or claim a pass without evidence.
+4. Before pushing any branch changes, run `npm run pipeline` and require success. If it fails or prerequisites are unavailable, do not push; report the blocker.
+5. After the pipeline passes, commit the requested changes and push them to the current feature branch by default. Never push directly to `main`; honor an explicit request not to commit or push and report any publication blocker.
+6. A pull request does not itself deploy to production. Do not merge a pull request, trigger a deployment, or claim a production release unless explicitly requested and authorized.
+7. Before opening the PR, inspect the branch diff against `main` and check the working tree. Report checks that could not be run; never claim a check passed without evidence.
+8. Before opening the PR, complete the project-wide [customization and architecture consistency review](../../../AGENTS.md#customization-and-architecture-consistency), including a fresh inventory of all project instructions, skills, and custom agents against the final branch state.
 
 ## Pull request title and description
 
