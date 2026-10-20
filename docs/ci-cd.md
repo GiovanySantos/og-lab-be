@@ -23,6 +23,11 @@ failure:
 6. `npm audit --audit-level=moderate` fails on moderate- or higher-severity
    dependency advisories.
 
+Database migrations use the project-local Supabase CLI. Run them explicitly
+with the `db:*` npm scripts documented in the README; database migrations are
+not part of this quality pipeline and are never applied automatically by
+starting the application.
+
 ## Pull requests and pushes
 
 GitHub cannot enforce a local script as a required status check. Contributors
