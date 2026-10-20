@@ -13,16 +13,16 @@ export class ThumborImageUrl implements ImageUrlGenerator {
   }
 
   public create(key: string): string {
-    const encodedKey = key
+    const encodedKey: string = key
       .split('/')
       .map((segment) => encodeURIComponent(segment))
       .join('/');
-    const sourceUrl = new URL(
+    const sourceUrl: string = new URL(
       encodedKey,
       `${this.r2PublicBaseUrl.replace(/\/+$/, '')}/`,
     ).toString();
-    const path = `0x0/filters:format(webp):quality(80)/${sourceUrl}`;
-    const signature = createHmac('sha1', this.securityKey)
+    const path: string = `0x0/filters:format(webp):quality(80)/${sourceUrl}`;
+    const signature: string = createHmac('sha1', this.securityKey)
       .update(path)
       .digest('base64url');
 

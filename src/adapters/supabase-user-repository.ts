@@ -18,7 +18,7 @@ export class SupabaseUserRepository implements UserRepository {
   ) {}
 
   public async create(user: NewUser): Promise<UserRecord> {
-    const result = await this.request(
+    const result: SupabaseRestResponse = await this.request(
       this.usersUrl(),
       {
         method: 'POST',
@@ -34,7 +34,7 @@ export class SupabaseUserRepository implements UserRepository {
   }
 
   public async findByEmail(email: string): Promise<UserRecord | null> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('select', '*');
     url.searchParams.set('email', `eq.${email}`);
     url.searchParams.set('limit', '1');
@@ -42,7 +42,7 @@ export class SupabaseUserRepository implements UserRepository {
   }
 
   public async findById(id: string): Promise<UserRecord | null> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('select', '*');
     url.searchParams.set('id', `eq.${id}`);
     url.searchParams.set('limit', '1');
@@ -53,9 +53,9 @@ export class SupabaseUserRepository implements UserRepository {
     id: string,
     username: string,
   ): Promise<UserRecord | null> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('id', `eq.${id}`);
-    const result = await this.request(url, {
+    const result: SupabaseRestResponse = await this.request(url, {
       method: 'PATCH',
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify({ username }),
@@ -67,9 +67,9 @@ export class SupabaseUserRepository implements UserRepository {
     id: string,
     passwordHash: string,
   ): Promise<UserRecord | null> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('id', `eq.${id}`);
-    const result = await this.request(url, {
+    const result: SupabaseRestResponse = await this.request(url, {
       method: 'PATCH',
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify({ password_hash: passwordHash }),
@@ -81,9 +81,9 @@ export class SupabaseUserRepository implements UserRepository {
     id: string,
     profileImageKey: string,
   ): Promise<UserRecord | null> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('id', `eq.${id}`);
-    const result = await this.request(url, {
+    const result: SupabaseRestResponse = await this.request(url, {
       method: 'PATCH',
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify({ profile_image_key: profileImageKey }),
@@ -92,9 +92,9 @@ export class SupabaseUserRepository implements UserRepository {
   }
 
   public async delete(id: string): Promise<boolean> {
-    const url = this.usersUrl();
+    const url: URL = this.usersUrl();
     url.searchParams.set('id', `eq.${id}`);
-    const result = await this.request(url, {
+    const result: SupabaseRestResponse = await this.request(url, {
       method: 'DELETE',
       headers: { Prefer: 'return=representation' },
     });
@@ -139,15 +139,17 @@ function optionalFirstUser(
     throw new UserRepositoryError('Supabase returned an invalid user result.');
   }
 
-  for (const user of result) {
-    return parseUser(user);
+  const firstUser: object | undefined = result[0];
+
+  if (firstUser !== undefined) {
+    return parseUser(firstUser);
   }
 
   return null;
 }
 
 function firstUser(result: SupabaseRestResponse): UserRecord {
-  const user = optionalFirstUser(result);
+  const user: UserRecord | null = optionalFirstUser(result);
 
   if (user === null) {
     throw new UserRepositoryError('Supabase did not return the created user.');

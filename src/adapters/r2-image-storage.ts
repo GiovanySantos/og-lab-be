@@ -81,7 +81,7 @@ export class R2ImageStorage implements ImageStorage {
     image: Buffer,
     contentType: ImageContentType,
   ): Promise<string> {
-    const key = `profiles/${randomUUID()}.${fileExtensions[contentType]}`;
+    const key: string = `profiles/${randomUUID()}.${fileExtensions[contentType]}`;
     await this.client.putObject({
       bucket: this.bucket,
       key,

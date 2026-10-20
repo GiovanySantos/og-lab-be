@@ -14,7 +14,7 @@ type HealthResponse = {
 export function createApp(
   dependencies: { users: UserService; tokens: TokenService },
 ): Express {
-  const app = express();
+  const app: Express = express();
 
   app.use(
     (
@@ -22,7 +22,7 @@ export function createApp(
       response: Response,
       next: NextFunction,
     ): void => {
-      const startedAt = Date.now();
+      const startedAt: number = Date.now();
 
       response.on('finish', () => {
         console.info(

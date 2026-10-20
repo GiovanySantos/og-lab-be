@@ -1,4 +1,5 @@
 import { S3Client } from '@aws-sdk/client-s3';
+import type { Express } from 'express';
 import { createApp } from './app.js';
 import {
   AwsS3ObjectClient,
@@ -15,12 +16,12 @@ export function createDependencies(config: AppConfig): {
   users: UserService;
   tokens: JwtTokenService;
 } {
-  const tokens = new JwtTokenService(config.jwtSecret);
-  const repository = new SupabaseUserRepository(
+  const tokens: JwtTokenService = new JwtTokenService(config.jwtSecret);
+  const repository: SupabaseUserRepository = new SupabaseUserRepository(
     config.supabaseUrl,
     new FetchSupabaseRestClient(config.supabaseServiceRoleKey),
   );
-  const s3 = new S3Client({
+  const s3: S3Client = new S3Client({
     region: 'auto',
     endpoint: `https://${config.r2AccountId}.r2.cloudflarestorage.com`,
     credentials: {
@@ -28,11 +29,11 @@ export function createDependencies(config: AppConfig): {
       secretAccessKey: config.r2SecretAccessKey,
     },
   });
-  const images = new R2ImageStorage(
+  const images: R2ImageStorage = new R2ImageStorage(
     new AwsS3ObjectClient(s3),
     config.r2Bucket,
   );
-  const imageUrls = new ThumborImageUrl(
+  const imageUrls: ThumborImageUrl = new ThumborImageUrl(
     config.thumborBaseUrl,
     config.r2PublicBaseUrl,
     config.thumborSecurityKey,
@@ -50,8 +51,8 @@ export function createDependencies(config: AppConfig): {
   };
 }
 
-const config = loadConfig(process.env);
-const app = createApp(createDependencies(config));
+const config: AppConfig = loadConfig(process.env);
+const app: Express = createApp(createDependencies(config));
 
 app.listen(config.port, () => {
   console.info(`Server running at http://localhost:${String(config.port)}`);

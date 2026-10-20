@@ -1,9 +1,9 @@
 import { scrypt, randomBytes, timingSafeEqual } from 'node:crypto';
-import jwt, { JsonWebTokenError } from 'jsonwebtoken';
+import jwt, { JsonWebTokenError, type JwtPayload } from 'jsonwebtoken';
 import { InvalidTokenError, type PasswordHasher, type TokenService } from '../domain/users.js';
 
-const saltBytes = 16;
-const derivedKeyBytes = 64;
+const saltBytes: number = 16;
+const derivedKeyBytes: number = 64;
 type ScryptRunner = (
   password: string,
   salt: string,
@@ -16,15 +16,21 @@ export class ScryptPasswordHasher implements PasswordHasher {
   public constructor(private readonly runScrypt: ScryptRunner = scrypt) {}
 
   public async hash(password: string): Promise<string> {
-    const salt = randomBytes(saltBytes).toString('hex');
-    const derivedKey = await deriveKey(password, salt, this.runScrypt);
+    const salt: string = randomBytes(saltBytes).toString('hex');
+    const derivedKey: Buffer = await deriveKey(password, salt, this.runScrypt);
 
     return `scrypt$16384$8$1$${salt}$${derivedKey.toString('hex')}`;
   }
 
   public async verify(password: string, encodedHash: string): Promise<boolean> {
-    const [algorithm, cost, blockSize, parallelization, salt, encodedKey] =
-      encodedHash.split('$');
+    const [
+      algorithm,
+      cost,
+      blockSize,
+      parallelization,
+      salt,
+      encodedKey,
+    ]: string[] = encodedHash.split('$');
 
     if (
       algorithm !== 'scrypt' ||
@@ -39,8 +45,8 @@ export class ScryptPasswordHasher implements PasswordHasher {
       return false;
     }
 
-    const expected = Buffer.from(encodedKey, 'hex');
-    const actual = await deriveKey(password, salt, this.runScrypt);
+    const expected: Buffer = Buffer.from(encodedKey, 'hex');
+    const actual: Buffer = await deriveKey(password, salt, this.runScrypt);
     return timingSafeEqual(actual, expected);
   }
 }
@@ -64,7 +70,7 @@ export class JwtTokenService implements TokenService {
 
   public verify(token: string): string {
     try {
-      const payload = jwt.verify(token, this.secret, {
+      const payload: string | JwtPayload = jwt.verify(token, this.secret, {
         algorithms: ['HS256'],
       });
 

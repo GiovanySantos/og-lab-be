@@ -12,6 +12,13 @@ import {
   type S3CommandSender,
 } from '../r2-image-storage.js';
 
+function createR2ObjectClient() {
+  return {
+    putObject: jest.fn(() => Promise.resolve()),
+    deleteObject: jest.fn(() => Promise.resolve()),
+  };
+}
+
 describe('R2ImageStorage', () => {
   const contentTypes: ReadonlyArray<{
     contentType: ImageContentType;
@@ -24,15 +31,19 @@ describe('R2ImageStorage', () => {
 
   it.each(contentTypes)(
     'stores a $contentType object in the configured bucket',
-    async ({ contentType, extension }) => {
-      const client = {
-        putObject: jest.fn(() => Promise.resolve()),
-        deleteObject: jest.fn(() => Promise.resolve()),
-      };
-      const storage = new R2ImageStorage(client, 'profile-images');
-      const image = Buffer.from('image-data');
+    async ({
+      contentType,
+      extension,
+    }: {
+      contentType: ImageContentType;
+      extension: string;
+    }) => {
+      const client: ReturnType<typeof createR2ObjectClient> =
+        createR2ObjectClient();
+      const storage: R2ImageStorage = new R2ImageStorage(client, 'profile-images');
+      const image: Buffer = Buffer.from('image-data');
 
-      const key = await storage.store(image, contentType);
+      const key: string = await storage.store(image, contentType);
 
       expect(key).toMatch(
         new RegExp(`^profiles/[0-9a-f-]+\\.${extension}$`),
@@ -47,11 +58,9 @@ describe('R2ImageStorage', () => {
   );
 
   it('deletes an object from the configured bucket', async () => {
-    const client = {
-      putObject: jest.fn(() => Promise.resolve()),
-      deleteObject: jest.fn(() => Promise.resolve()),
-    };
-    const storage = new R2ImageStorage(client, 'profile-images');
+    const client: ReturnType<typeof createR2ObjectClient> =
+      createR2ObjectClient();
+    const storage: R2ImageStorage = new R2ImageStorage(client, 'profile-images');
 
     await expect(storage.delete('profiles/avatar.webp')).resolves.toBeUndefined();
 
@@ -69,8 +78,8 @@ describe('R2ImageStorage', () => {
         return Promise.resolve({});
       },
     };
-    const client = new AwsS3ObjectClient(sender);
-    const image = Buffer.from('image');
+    const client: AwsS3ObjectClient = new AwsS3ObjectClient(sender);
+    const image: Buffer = Buffer.from('image');
 
     await client.putObject({
       bucket: 'profile-images',
@@ -79,7 +88,8 @@ describe('R2ImageStorage', () => {
       contentType: 'image/webp',
     });
 
-    const command = commands[0];
+    const command: PutObjectCommand | DeleteObjectCommand | undefined =
+      commands[0];
     expect(command).toBeInstanceOf(PutObjectCommand);
     if (command instanceof PutObjectCommand) {
       expect(command.input).toMatchObject({
@@ -99,14 +109,15 @@ describe('R2ImageStorage', () => {
         return Promise.resolve({});
       },
     };
-    const client = new AwsS3ObjectClient(sender);
+    const client: AwsS3ObjectClient = new AwsS3ObjectClient(sender);
 
     await client.deleteObject({
       bucket: 'profile-images',
       key: 'profiles/avatar.webp',
     });
 
-    const command = commands[0];
+    const command: PutObjectCommand | DeleteObjectCommand | undefined =
+      commands[0];
     expect(command).toBeInstanceOf(DeleteObjectCommand);
     if (command instanceof DeleteObjectCommand) {
       expect(command.input).toEqual({
@@ -117,11 +128,11 @@ describe('R2ImageStorage', () => {
   });
 
   it('wraps R2 upload failures with an explicit storage error', async () => {
-    const client = new AwsS3ObjectClient({
+    const client: AwsS3ObjectClient = new AwsS3ObjectClient({
       send: () => Promise.reject(new Error('R2 unavailable')),
     });
 
-    const upload = client.putObject({
+    const upload: Promise<void> = client.putObject({
       bucket: 'profile-images',
       key: 'profiles/avatar.webp',
       body: Buffer.from('image'),
@@ -137,11 +148,11 @@ describe('R2ImageStorage', () => {
   });
 
   it('wraps R2 deletion failures with an explicit storage error', async () => {
-    const client = new AwsS3ObjectClient({
+    const client: AwsS3ObjectClient = new AwsS3ObjectClient({
       send: () => Promise.reject(new Error('R2 unavailable')),
     });
 
-    const deletion = client.deleteObject({
+    const deletion: Promise<void> = client.deleteObject({
       bucket: 'profile-images',
       key: 'profiles/avatar.webp',
     });

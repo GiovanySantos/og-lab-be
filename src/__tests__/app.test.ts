@@ -1,4 +1,5 @@
 import request from 'supertest';
+import type { Express } from 'express';
 import { createApp } from '../app.js';
 import {
   UserService,
@@ -6,7 +7,7 @@ import {
 } from '../domain/users.js';
 
 describe('createApp', () => {
-  const app = () => {
+  const app: () => Express = () => {
     const user: UserRecord = {
       id: 'user-1',
       username: 'member',
@@ -16,7 +17,7 @@ describe('createApp', () => {
       createdAt: '2026-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
     };
-    const service = new UserService(
+    const service: UserService = new UserService(
       {
         create: () => Promise.resolve(user),
         findByEmail: () => Promise.resolve(user),
@@ -59,7 +60,9 @@ describe('createApp', () => {
   });
 
   it('logs the method, path, status, and duration of completed requests', async () => {
-    const log = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const log: jest.SpyInstance = jest
+      .spyOn(console, 'info')
+      .mockImplementation(() => undefined);
 
     await request(app())
       .get('/health')

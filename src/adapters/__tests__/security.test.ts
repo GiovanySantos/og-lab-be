@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import {
   InvalidTokenError,
 } from '../../domain/users.js';
@@ -6,7 +7,7 @@ import { JwtTokenService, ScryptPasswordHasher } from '../security.js';
 
 describe('ScryptPasswordHasher', () => {
   it('propagates password-hashing failures', async () => {
-    const hasher = new ScryptPasswordHasher(
+    const hasher: ScryptPasswordHasher = new ScryptPasswordHasher(
       (_password, _salt, _keyLength, _options, callback) => {
         callback(new Error('scrypt unavailable'), Buffer.alloc(0));
       },
@@ -18,8 +19,8 @@ describe('ScryptPasswordHasher', () => {
   });
 
   it('hashes a password and verifies it', async () => {
-    const hasher = new ScryptPasswordHasher();
-    const hash = await hasher.hash('correct horse battery staple');
+    const hasher: ScryptPasswordHasher = new ScryptPasswordHasher();
+    const hash: string = await hasher.hash('correct horse battery staple');
 
     expect(hash).toMatch(/^scrypt\$16384\$8\$1\$[a-f0-9]{32}\$[a-f0-9]{128}$/);
     await expect(
@@ -45,7 +46,7 @@ describe('ScryptPasswordHasher', () => {
 });
 
 describe('JwtTokenService', () => {
-  const secret = 'a-secret-with-at-least-thirty-two-bytes-long';
+  const secret: string = 'a-secret-with-at-least-thirty-two-bytes-long';
 
   it('requires a secret of at least 32 bytes', () => {
     expect(() => new JwtTokenService('too-short')).toThrow(
@@ -54,9 +55,9 @@ describe('JwtTokenService', () => {
   });
 
   it('issues a 15-minute HS256 token with an audience, issuer, and subject', () => {
-    const service = new JwtTokenService(secret);
-    const token = service.issue('user-123');
-    const payload = jwt.decode(token);
+    const service: JwtTokenService = new JwtTokenService(secret);
+    const token: string = service.issue('user-123');
+    const payload: string | JwtPayload | null = jwt.decode(token);
 
     expect(payload).toMatchObject({
       sub: 'user-123',
@@ -85,7 +86,7 @@ describe('JwtTokenService', () => {
   );
 
   it('rejects a token without a subject', () => {
-    const token = jwt.sign({}, secret, {
+    const token: string = jwt.sign({}, secret, {
       audience: 'og-lab-api',
       issuer: 'og-lab-be',
     });
@@ -96,7 +97,7 @@ describe('JwtTokenService', () => {
   });
 
   it('rejects a JWT with a string payload', () => {
-    const token = jwt.sign('a-string-payload', secret);
+    const token: string = jwt.sign('a-string-payload', secret);
 
     expect(() => new JwtTokenService(secret).verify(token)).toThrow(
       InvalidTokenError,
@@ -104,7 +105,7 @@ describe('JwtTokenService', () => {
   });
 
   it('propagates unexpected verification errors', () => {
-    const verify = jest
+    const verify: jest.SpyInstance = jest
       .spyOn(jwt, 'verify')
       .mockImplementationOnce(() => {
         throw new Error('unexpected failure');

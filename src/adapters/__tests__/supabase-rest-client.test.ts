@@ -1,6 +1,7 @@
 import {
   FetchSupabaseRestClient,
   SupabaseRestError,
+  type SupabaseRestResponse,
 } from '../supabase-rest-client.js';
 
 function fixture(response: Response = Response.json([{ id: 'user-123' }])) {
@@ -22,13 +23,13 @@ function fixture(response: Response = Response.json([{ id: 'user-123' }])) {
 
 describe('FetchSupabaseRestClient', () => {
   it('sends the service-role credentials and returns JSON responses', async () => {
-    const setup = fixture();
+    const setup: ReturnType<typeof fixture> = fixture();
 
     await expect(
       setup.client.request(new URL('https://project.supabase.co/rest/v1/users')),
     ).resolves.toEqual([{ id: 'user-123' }]);
 
-    const headers = new Headers(setup.calls[0]?.init?.headers);
+    const headers: Headers = new Headers(setup.calls[0]?.init?.headers);
     expect(setup.calls[0]?.url).toBe('https://project.supabase.co/rest/v1/users');
     expect(headers.get('apikey')).toBe('server-key');
     expect(headers.get('Authorization')).toBe('Bearer server-key');
@@ -37,7 +38,7 @@ describe('FetchSupabaseRestClient', () => {
   });
 
   it('returns null for a no-content response', async () => {
-    const setup = fixture(new Response(null, { status: 204 }));
+    const setup: ReturnType<typeof fixture> = fixture(new Response(null, { status: 204 }));
 
     await expect(
       setup.client.request(new URL('https://project.supabase.co/rest/v1/users')),
@@ -45,7 +46,7 @@ describe('FetchSupabaseRestClient', () => {
   });
 
   it('exposes the status and database code for failed requests', async () => {
-    const setup = fixture(
+    const setup: ReturnType<typeof fixture> = fixture(
       Response.json({ code: '23505' }, { status: 409 }),
     );
 
@@ -63,19 +64,22 @@ describe('FetchSupabaseRestClient', () => {
     { status: 500, body: { code: 7 } },
     { status: 500, body: {} },
     { status: 500, body: null },
-  ])('returns a null error code when an error body has no string code', async ({
-    status,
-    body,
-  }) => {
-    const setup = fixture(Response.json(body, { status }));
+  ])(
+    'returns a null error code when an error body has no string code',
+    async ({
+      status,
+      body,
+    }: { status: number; body: object | null }) => {
+    const setup: ReturnType<typeof fixture> = fixture(Response.json(body, { status }));
 
     await expect(
       setup.client.request(new URL('https://project.supabase.co/rest/v1/users')),
     ).rejects.toMatchObject({ status, code: null });
-  });
+    },
+  );
 
   it('rejects a successful response that is not JSON object data', async () => {
-    const setup = fixture(Response.json('not-an-object'));
+    const setup: ReturnType<typeof fixture> = fixture(Response.json('not-an-object'));
 
     await expect(
       setup.client.request(new URL('https://project.supabase.co/rest/v1/users')),
@@ -87,7 +91,7 @@ describe('FetchSupabaseRestClient', () => {
   });
 
   it('rejects a successful empty JSON response', async () => {
-    const setup = fixture(Response.json(null));
+    const setup: ReturnType<typeof fixture> = fixture(Response.json(null));
 
     await expect(
       setup.client.request(new URL('https://project.supabase.co/rest/v1/users')),
@@ -99,12 +103,12 @@ describe('FetchSupabaseRestClient', () => {
   });
 
   it('classifies fetch connection failures as Supabase unavailable', async () => {
-    const client = new FetchSupabaseRestClient(
+    const client: FetchSupabaseRestClient = new FetchSupabaseRestClient(
       'server-key',
       () => Promise.reject(new TypeError('connection failed')),
     );
 
-    const request = client.request(
+    const request: Promise<SupabaseRestResponse> = client.request(
       new URL('https://project.supabase.co/rest/v1/users'),
     );
 
@@ -122,7 +126,7 @@ describe('FetchSupabaseRestClient', () => {
   });
 
   it('propagates non-network errors from the fetch implementation', async () => {
-    const client = new FetchSupabaseRestClient(
+    const client: FetchSupabaseRestClient = new FetchSupabaseRestClient(
       'server-key',
       () => Promise.reject(new Error('unexpected fetch failure')),
     );

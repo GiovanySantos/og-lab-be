@@ -13,6 +13,7 @@ import {
   UserNotFoundError,
   UserRepositoryError,
   UserService,
+  type AuthenticatedUser,
   type TokenService,
 } from '../domain/users.js';
 import type { ParamsDictionary } from 'express-serve-static-core';
@@ -25,17 +26,28 @@ declare module 'express-serve-static-core' {
 
 type ErrorResponse = { error: string };
 type JsonBody = Record<string, string>;
-type JsonInput = object | string | number | boolean | null | undefined;
+interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+type JsonValue =
+  | JsonObject
+  | JsonValue[]
+  | string
+  | number
+  | boolean
+  | null;
+type JsonInput = JsonValue | undefined;
 type JsonRequest = Request<ParamsDictionary, object, JsonInput>;
 
 export function createAuthRouter(users: UserService): express.Router {
-  const router = express.Router();
+  const router: express.Router = express.Router();
 
   router.post(
     '/register',
     async (request: JsonRequest, response: Response) => {
-      const body = stringBody(request);
-      const result = await users.register({
+      const body: JsonBody = stringBody(request);
+      const result: AuthenticatedUser = await users.register({
         username: requiredField(body, 'username'),
         email: requiredField(body, 'email'),
         password: requiredField(body, 'password'),
@@ -47,8 +59,8 @@ export function createAuthRouter(users: UserService): express.Router {
   router.post(
     '/login',
     async (request: JsonRequest, response: Response) => {
-      const body = stringBody(request);
-      const result = await users.login({
+      const body: JsonBody = stringBody(request);
+      const result: AuthenticatedUser = await users.login({
         email: requiredField(body, 'email'),
         password: requiredField(body, 'password'),
       });
@@ -63,14 +75,14 @@ export function createUserRouter(
   users: UserService,
   tokens: TokenService,
 ): express.Router {
-  const router = express.Router();
+  const router: express.Router = express.Router();
 
   router.get('/me', authenticate(tokens), async (_request, response) => {
     response.status(200).json(await users.getProfile(response.locals.userId));
   });
 
   router.patch('/me', authenticate(tokens), async (request: JsonRequest, response) => {
-    const body = stringBody(request);
+    const body: JsonBody = stringBody(request);
     if (Object.keys(body).length !== 1) {
       throw new UserInputError('Only the username can be changed.');
     }
@@ -87,7 +99,7 @@ export function createUserRouter(
     '/me/password',
     authenticate(tokens),
     async (request: JsonRequest, response) => {
-      const body = stringBody(request);
+      const body: JsonBody = stringBody(request);
       if (
         Object.keys(body).length !== 2 ||
         body['currentPassword'] === undefined ||
@@ -116,7 +128,9 @@ export function createUserRouter(
       type: ['image/jpeg', 'image/png', 'image/webp'],
     }),
     async (request, response) => {
-      const contentType = request.get('content-type')?.split(';')[0];
+      const contentType: string | undefined = request
+        .get('content-type')
+        ?.split(';')[0];
       if (
         contentType !== 'image/jpeg' &&
         contentType !== 'image/png' &&
@@ -216,8 +230,8 @@ export function createErrorHandler(): (
 
 function authenticate(tokens: TokenService): RequestHandler {
   return (request, response, next) => {
-    const authorization = request.get('authorization');
-    const token =
+    const authorization: string | undefined = request.get('authorization');
+    const token: string | undefined =
       authorization === undefined
         ? undefined
         : /^Bearer ([^\s]+)$/i.exec(authorization)?.[1];
@@ -241,16 +255,11 @@ function authenticate(tokens: TokenService): RequestHandler {
 }
 
 function stringBody(request: JsonRequest): JsonBody {
-  if (
-    request.body === null ||
-    request.body === undefined ||
-    typeof request.body !== 'object' ||
-    Array.isArray(request.body)
-  ) {
+  if (!isJsonObject(request.body)) {
     throw new UserInputError('A JSON object is required.');
   }
 
-  const entries = Object.entries(request.body);
+  const entries: [string, JsonValue][] = Object.entries(request.body);
   const result: JsonBody = {};
 
   for (const [key, value] of entries) {
@@ -264,8 +273,17 @@ function stringBody(request: JsonRequest): JsonBody {
   return result;
 }
 
+function isJsonObject(value: JsonInput): value is JsonObject {
+  return (
+    value !== null &&
+    value !== undefined &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  );
+}
+
 function requiredField(body: JsonBody, field: string): string {
-  const value = body[field];
+  const value: string | undefined = body[field];
 
   if (value === undefined) {
     throw new UserInputError(`The ${field} field is required.`);

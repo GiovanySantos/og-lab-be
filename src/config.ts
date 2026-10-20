@@ -13,8 +13,8 @@ export type AppConfig = {
 };
 
 export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
-  const portValue = environment['PORT'] ?? '3000';
-  const port = Number(portValue);
+  const portValue: string = environment['PORT'] ?? '3000';
+  const port: number = Number(portValue);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('PORT must be an integer between 1 and 65535.');
@@ -42,7 +42,7 @@ function requiredValue(
   environment: NodeJS.ProcessEnv,
   name: string,
 ): string {
-  const value = environment[name]?.trim();
+  const value: string | undefined = environment[name]?.trim();
 
   if (value === undefined || value.length === 0) {
     throw new Error(`${name} is required.`);
@@ -52,10 +52,10 @@ function requiredValue(
 }
 
 function requiredUrl(environment: NodeJS.ProcessEnv, name: string): string {
-  const value = requiredValue(environment, name);
+  const value: string = requiredValue(environment, name);
 
   try {
-    const parsed = new URL(value);
+    const parsed: URL = new URL(value);
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       throw new Error();

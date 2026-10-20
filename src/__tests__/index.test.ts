@@ -1,8 +1,9 @@
 import express from 'express';
-import { createServer } from 'node:http';
+import type { Express } from 'express';
+import { createServer, type Server } from 'node:http';
 
 describe('application entry point', () => {
-  const environmentKeys = [
+  const environmentKeys: string[] = [
     'PORT',
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
@@ -15,7 +16,7 @@ describe('application entry point', () => {
     'THUMBOR_BASE_URL',
     'THUMBOR_SECURITY_KEY',
   ];
-  const originalEnvironment = new Map(
+  const originalEnvironment: Map<string, string | undefined> = new Map(
     environmentKeys.map((key) => [key, process.env[key]]),
   );
   const portCases: ReadonlyArray<{
@@ -43,12 +44,24 @@ describe('application entry point', () => {
 
   it.each(portCases)(
     'starts the application on $label',
-    ({ port, expectedPort }) => {
-      const app = express();
-      const listen = jest
+    ({
+      port,
+      expectedPort,
+    }: {
+      label: string;
+      port: string | undefined;
+      expectedPort: number;
+    }) => {
+      const app: Express = express();
+      const listen: jest.SpyInstance<
+        Server,
+        Parameters<Express['listen']>
+      > = jest
         .spyOn(app, 'listen')
         .mockReturnValue(createServer());
-      const log = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+      const log: jest.SpyInstance = jest
+        .spyOn(console, 'info')
+        .mockImplementation(() => undefined);
       process.env['SUPABASE_URL'] = 'https://project.supabase.co';
       process.env['SUPABASE_SERVICE_ROLE_KEY'] = 'service-role-key';
       process.env['JWT_SECRET'] = 'a-secret-with-at-least-thirty-two-bytes-long';
@@ -76,9 +89,12 @@ describe('application entry point', () => {
 
       expect(listen).toHaveBeenCalledWith(expectedPort, expect.any(Function));
 
-      const onListening = listen.mock.calls[0]?.[1];
+      const onListening:
+        | NonNullable<Parameters<Express['listen']>[1]>
+        | undefined =
+        listen.mock.calls[0]?.[1];
 
-      if (typeof onListening === 'function') {
+      if (onListening !== undefined) {
         onListening();
       }
 

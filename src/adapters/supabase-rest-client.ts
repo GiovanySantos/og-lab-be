@@ -25,7 +25,7 @@ export class FetchSupabaseRestClient implements SupabaseRestClient {
     url: URL,
     init: RequestInit = {},
   ): Promise<SupabaseRestResponse> {
-    const headers = new Headers(init.headers);
+    const headers: Headers = new Headers(init.headers);
     headers.set('apikey', this.serviceRoleKey);
     headers.set('Authorization', `Bearer ${this.serviceRoleKey}`);
     headers.set('Accept', 'application/json');
@@ -51,7 +51,7 @@ export class FetchSupabaseRestClient implements SupabaseRestClient {
       return null;
     }
 
-    const payload = await response.json();
+    const payload: JsonPayload = await response.json();
 
     if (!response.ok) {
       throw new SupabaseRestError(

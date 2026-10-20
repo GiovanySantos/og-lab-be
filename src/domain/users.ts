@@ -76,11 +76,15 @@ export class UserService {
     email: string;
     password: string;
   }): Promise<AuthenticatedUser> {
-    const username = validateUsername(input.username);
-    const email = validateEmail(input.email);
-    const password = validatePassword(input.password);
-    const passwordHash = await this.passwords.hash(password);
-    const user = await this.users.create({ username, email, passwordHash });
+    const username: string = validateUsername(input.username);
+    const email: string = validateEmail(input.email);
+    const password: string = validatePassword(input.password);
+    const passwordHash: string = await this.passwords.hash(password);
+    const user: UserRecord = await this.users.create({
+      username,
+      email,
+      passwordHash,
+    });
     return this.authenticatedUser(user);
   }
 
@@ -88,8 +92,8 @@ export class UserService {
     email: string;
     password: string;
   }): Promise<AuthenticatedUser> {
-    const email = validateEmail(input.email);
-    const user = await this.users.findByEmail(email);
+    const email: string = validateEmail(input.email);
+    const user: UserRecord | null = await this.users.findByEmail(email);
 
     if (
       user === null ||
@@ -102,7 +106,7 @@ export class UserService {
   }
 
   public async getProfile(userId: string): Promise<PublicUser> {
-    const user = await this.getUser(userId);
+    const user: UserRecord = await this.getUser(userId);
     return this.toPublicUser(user);
   }
 
@@ -110,8 +114,11 @@ export class UserService {
     userId: string,
     usernameInput: string,
   ): Promise<PublicUser> {
-    const username = validateUsername(usernameInput);
-    const updated = await this.users.updateUsername(userId, username);
+    const username: string = validateUsername(usernameInput);
+    const updated: UserRecord | null = await this.users.updateUsername(
+      userId,
+      username,
+    );
 
     if (updated === null) {
       throw new UserNotFoundError('User was not found.');
@@ -135,9 +142,12 @@ export class UserService {
       throw new InvalidCredentialsError('Current password is incorrect.');
     }
 
-    const newPassword = validatePassword(newPasswordInput);
-    const passwordHash = await this.passwords.hash(newPassword);
-    const updated = await this.users.updatePasswordHash(userId, passwordHash);
+    const newPassword: string = validatePassword(newPasswordInput);
+    const passwordHash: string = await this.passwords.hash(newPassword);
+    const updated: UserRecord | null = await this.users.updatePasswordHash(
+      userId,
+      passwordHash,
+    );
 
     if (updated === null) {
       throw new UserNotFoundError('User was not found.');
@@ -155,9 +165,12 @@ export class UserService {
       throw new UserInputError('Image must be between 1 byte and 5 MB.');
     }
 
-    const existing = await this.getUser(userId);
-    const newKey = await this.images.store(image, contentType);
-    const updated = await this.users.updateProfileImage(userId, newKey);
+    const existing: UserRecord = await this.getUser(userId);
+    const newKey: string = await this.images.store(image, contentType);
+    const updated: UserRecord | null = await this.users.updateProfileImage(
+      userId,
+      newKey,
+    );
 
     if (updated === null) {
       await this.images.delete(newKey);
@@ -172,8 +185,8 @@ export class UserService {
   }
 
   public async deleteAccount(userId: string): Promise<void> {
-    const user = await this.getUser(userId);
-    const deleted = await this.users.delete(userId);
+    const user: UserRecord = await this.getUser(userId);
+    const deleted: boolean = await this.users.delete(userId);
 
     if (!deleted) {
       throw new UserNotFoundError('User was not found.');
@@ -185,7 +198,7 @@ export class UserService {
   }
 
   private async getUser(userId: string): Promise<UserRecord> {
-    const user = await this.users.findById(userId);
+    const user: UserRecord | null = await this.users.findById(userId);
 
     if (user === null) {
       throw new UserNotFoundError('User was not found.');
@@ -217,7 +230,7 @@ export class UserService {
 }
 
 function validateUsername(value: string): string {
-  const username = value.trim();
+  const username: string = value.trim();
 
   if (username.length < 3 || username.length > 32) {
     throw new UserInputError('Username must contain between 3 and 32 characters.');
@@ -227,7 +240,7 @@ function validateUsername(value: string): string {
 }
 
 function validateEmail(value: string): string {
-  const email = value.trim().toLowerCase();
+  const email: string = value.trim().toLowerCase();
 
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new UserInputError('A valid email address is required.');

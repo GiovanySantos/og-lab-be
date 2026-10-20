@@ -18,14 +18,40 @@ const record: UserRecord = {
 };
 
 function createFixture() {
-  const users = {
+  const users: ReturnType<typeof createUserRepositoryDouble> =
+    createUserRepositoryDouble();
+  const passwords: ReturnType<typeof createPasswordHasherDouble> =
+    createPasswordHasherDouble();
+  const tokens: ReturnType<typeof createTokenServiceDouble> =
+    createTokenServiceDouble();
+  const images: ReturnType<typeof createImageStorageDouble> =
+    createImageStorageDouble();
+  const imageUrls: ReturnType<typeof createImageUrlGeneratorDouble> =
+    createImageUrlGeneratorDouble();
+  const service: UserService = new UserService(
+    users,
+    passwords,
+    tokens,
+    images,
+    imageUrls,
+  );
+
+  return { service, users, passwords, tokens, images, imageUrls };
+}
+
+function createUserRepositoryDouble() {
+  return {
     create: jest.fn((input: {
       username: string;
       email: string;
       passwordHash: string;
     }) => Promise.resolve({ ...record, ...input })),
-    findByEmail: jest.fn((): Promise<UserRecord | null> => Promise.resolve(record)),
-    findById: jest.fn((): Promise<UserRecord | null> => Promise.resolve(record)),
+    findByEmail: jest.fn(
+      (): Promise<UserRecord | null> => Promise.resolve(record),
+    ),
+    findById: jest.fn(
+      (): Promise<UserRecord | null> => Promise.resolve(record),
+    ),
     updateUsername: jest.fn(
       (_id: string, username: string): Promise<UserRecord | null> =>
         Promise.resolve({ ...record, username }),
@@ -40,32 +66,44 @@ function createFixture() {
     ),
     delete: jest.fn(() => Promise.resolve(true)),
   };
-  const passwords = {
+}
+
+function createPasswordHasherDouble() {
+  return {
     hash: jest.fn(() => Promise.resolve('encoded-password')),
-    verify: jest.fn(() => Promise.resolve(true)),
+    verify: jest.fn(
+      () => Promise.resolve(true),
+    ),
   };
-  const tokens = { issue: jest.fn(() => 'signed-token'), verify: jest.fn() };
-  const images = {
-    store: jest.fn(() => Promise.resolve('profiles/new.webp')),
+}
+
+function createTokenServiceDouble() {
+  return {
+    issue: jest.fn(() => 'signed-token'),
+    verify: jest.fn(() => 'user-123'),
+  };
+}
+
+function createImageStorageDouble() {
+  return {
+    store: jest.fn(
+      () => Promise.resolve('profiles/new.webp'),
+    ),
     delete: jest.fn(() => Promise.resolve()),
   };
-  const imageUrls = {
+}
+
+function createImageUrlGeneratorDouble() {
+  return {
     create: jest.fn((key: string) => `https://thumbor.example/${key}`),
   };
-  const service = new UserService(
-    users,
-    passwords,
-    tokens,
-    images,
-    imageUrls,
-  );
-
-  return { service, users, passwords, tokens, images, imageUrls };
 }
+
+type Fixture = ReturnType<typeof createFixture>;
 
 describe('UserService', () => {
   it('registers with a normalized email and never returns the password hash', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.register({
@@ -94,7 +132,7 @@ describe('UserService', () => {
   it.each(['ab', 'a'.repeat(33)])(
     'rejects usernames with invalid lengths',
     async (username) => {
-      const fixture = createFixture();
+      const fixture: Fixture = createFixture();
       await expect(
         fixture.service.register({
           username,
@@ -108,7 +146,7 @@ describe('UserService', () => {
   it.each(['not-an-email', 'a'.repeat(250) + '@example.com'])(
     'rejects invalid email addresses',
     async (email) => {
-      const fixture = createFixture();
+      const fixture: Fixture = createFixture();
       await expect(
         fixture.service.register({
           username: 'member',
@@ -122,7 +160,7 @@ describe('UserService', () => {
   it.each(['short', 'p'.repeat(129)])(
     'rejects passwords with invalid lengths',
     async (password) => {
-      const fixture = createFixture();
+      const fixture: Fixture = createFixture();
       await expect(
         fixture.service.register({
           username: 'member',
@@ -134,7 +172,7 @@ describe('UserService', () => {
   );
 
   it('propagates duplicate username or email errors from the repository', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.create.mockRejectedValue(
       new DuplicateUserError('Username or email is already in use.'),
     );
@@ -149,7 +187,7 @@ describe('UserService', () => {
   });
 
   it('logs in with a case-insensitive email', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.login({
@@ -166,7 +204,7 @@ describe('UserService', () => {
   });
 
   it('rejects login when the account does not exist', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findByEmail.mockResolvedValue(null);
 
     await expect(
@@ -179,7 +217,7 @@ describe('UserService', () => {
   });
 
   it('rejects login when the password does not match', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.passwords.verify.mockResolvedValue(false);
 
     await expect(
@@ -191,7 +229,7 @@ describe('UserService', () => {
   });
 
   it('rejects malformed email addresses during login', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.login({ email: 'not-an-email', password: 'secret' }),
@@ -199,7 +237,7 @@ describe('UserService', () => {
   });
 
   it('returns the profile and a Thumbor URL when the profile image exists', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue({
       ...record,
       profileImageKey: 'profiles/avatar.webp',
@@ -214,7 +252,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when the requested profile does not exist', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue(null);
 
     await expect(
@@ -223,7 +261,7 @@ describe('UserService', () => {
   });
 
   it('updates a username and converts the result to a public user', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.updateUsername(record.id, 'new-name'),
@@ -231,7 +269,7 @@ describe('UserService', () => {
   });
 
   it('rejects invalid username updates', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.updateUsername(record.id, 'ab'),
@@ -239,7 +277,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when username update affects no user', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.updateUsername.mockResolvedValue(null);
 
     await expect(
@@ -248,7 +286,7 @@ describe('UserService', () => {
   });
 
   it('changes a password after verifying the current password', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.changePassword(
@@ -271,7 +309,7 @@ describe('UserService', () => {
   });
 
   it('rejects an incorrect current password', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.passwords.verify.mockResolvedValue(false);
 
     await expect(
@@ -285,7 +323,7 @@ describe('UserService', () => {
   });
 
   it('rejects an oversized current password without verifying it', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.changePassword(
@@ -298,7 +336,7 @@ describe('UserService', () => {
   });
 
   it('validates the new password length', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.changePassword(record.id, 'current-password', 'short'),
@@ -306,7 +344,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when the account is absent during password change', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue(null);
 
     await expect(
@@ -319,7 +357,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when the password update affects no user', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.updatePasswordHash.mockResolvedValue(null);
 
     await expect(
@@ -332,7 +370,7 @@ describe('UserService', () => {
   });
 
   it('rejects empty profile images', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.uploadProfileImage(
@@ -344,7 +382,7 @@ describe('UserService', () => {
   });
 
   it('rejects profile images larger than 5 MB', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(
       fixture.service.uploadProfileImage(
@@ -356,7 +394,7 @@ describe('UserService', () => {
   });
 
   it('does not store a profile image for a missing user', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue(null);
 
     await expect(
@@ -370,7 +408,7 @@ describe('UserService', () => {
   });
 
   it('stores an image, updates the profile and removes the previous image', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue({
       ...record,
       profileImageKey: 'profiles/old.webp',
@@ -389,7 +427,7 @@ describe('UserService', () => {
   });
 
   it('removes an unreferenced image when the profile update reports no user', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.updateProfileImage.mockResolvedValue(null);
 
     await expect(
@@ -403,7 +441,7 @@ describe('UserService', () => {
   });
 
   it('deletes a user without an image', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
 
     await expect(fixture.service.deleteAccount(record.id)).resolves.toBeUndefined();
     expect(fixture.users.delete).toHaveBeenCalledWith(record.id);
@@ -411,7 +449,7 @@ describe('UserService', () => {
   });
 
   it('deletes a user image after deleting the account', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue({
       ...record,
       profileImageKey: 'profiles/avatar.webp',
@@ -422,7 +460,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when the account is already absent', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue(null);
 
     await expect(
@@ -431,7 +469,7 @@ describe('UserService', () => {
   });
 
   it('returns not found when account deletion affects no database row', async () => {
-    const fixture = createFixture();
+    const fixture: Fixture = createFixture();
     fixture.users.delete.mockResolvedValue(false);
 
     await expect(

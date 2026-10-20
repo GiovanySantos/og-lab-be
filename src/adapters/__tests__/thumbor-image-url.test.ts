@@ -14,18 +14,18 @@ describe('ThumborImageUrl', () => {
   });
 
   it('creates a signed WebP transformation URL for the R2 object', () => {
-    const securityKey = 'a-thumbor-secret-with-at-least-thirty-two-bytes';
-    const generator = new ThumborImageUrl(
+    const securityKey: string = 'a-thumbor-secret-with-at-least-thirty-two-bytes';
+    const generator: ThumborImageUrl = new ThumborImageUrl(
       'https://thumbor.example/',
       'https://images.example.com/',
       securityKey,
     );
 
-    const url = generator.create('profiles/user 1/avatar.webp');
-    const source =
+    const url: string = generator.create('profiles/user 1/avatar.webp');
+    const source: string =
       'https://images.example.com/profiles/user%201/avatar.webp';
-    const path = `0x0/filters:format(webp):quality(80)/${source}`;
-    const signature = createHmac('sha1', securityKey)
+    const path: string = `0x0/filters:format(webp):quality(80)/${source}`;
+    const signature: string = createHmac('sha1', securityKey)
       .update(path)
       .digest('base64url');
 

@@ -15,7 +15,7 @@ const validEnvironment: NodeJS.ProcessEnv = {
 
 describe('loadConfig', () => {
   it('loads the required services and defaults to port 3000', () => {
-    const config = loadConfig(validEnvironment);
+    const config: AppConfig = loadConfig(validEnvironment);
 
     expect(config).toEqual<AppConfig>({
       port: 3000,
@@ -54,7 +54,10 @@ describe('loadConfig', () => {
     'R2_BUCKET',
     'THUMBOR_SECURITY_KEY',
   ])('requires %s', (name) => {
-    const environment = { ...validEnvironment, [name]: undefined };
+    const environment: NodeJS.ProcessEnv = {
+      ...validEnvironment,
+      [name]: undefined,
+    };
 
     expect(() => loadConfig(environment)).toThrow(`${name} is required.`);
   });
@@ -69,9 +72,12 @@ describe('loadConfig', () => {
     { name: 'SUPABASE_URL', value: 'not-a-url' },
     { name: 'R2_PUBLIC_BASE_URL', value: 'ftp://images.example.com' },
     { name: 'THUMBOR_BASE_URL', value: 'http://[' },
-  ])('rejects invalid $name values', ({ name, value }) => {
+  ])(
+    'rejects invalid $name values',
+    ({ name, value }: { name: string; value: string }) => {
     expect(() =>
       loadConfig({ ...validEnvironment, [name]: value }),
     ).toThrow(`${name} must be a valid HTTP or HTTPS URL.`);
-  });
+    },
+  );
 });

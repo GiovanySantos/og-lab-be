@@ -1,9 +1,12 @@
 import express, {
+  type Express,
   type NextFunction,
   type Request,
   type Response,
 } from 'express';
 import request from 'supertest';
+import type { Response as SupertestResponse } from 'supertest';
+import type { Test as SupertestTest } from 'supertest';
 import {
   DuplicateUserError,
   ImageStorageError,
@@ -46,7 +49,7 @@ const imageCases: ReadonlyArray<{
 ];
 
 function fixture() {
-  const users = new UserService(
+  const users: UserService = new UserService(
     {
       create: () => Promise.resolve(user),
       findByEmail: () => Promise.resolve(user),
@@ -78,8 +81,8 @@ function fixture() {
     },
     { create: () => 'https://thumbor.example/signed/profile.webp' },
   );
-  const app = express();
-  const forwardedError = jest.fn();
+  const app: Express = express();
+  const forwardedError: jest.Mock = jest.fn();
   app.use(express.json({ strict: false }));
   app.use('/auth', createAuthRouter(users));
   app.use('/users', createUserRouter(users, {
@@ -109,14 +112,16 @@ function fixture() {
   return { app, users, forwardedError };
 }
 
+type RouteFixture = ReturnType<typeof fixture>;
+
 describe('user routes', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it('registers an account and returns an access token', async () => {
-    const { app, users } = fixture();
-    const register = jest
+    const { app, users }: RouteFixture = fixture();
+    const register: jest.SpyInstance = jest
       .spyOn(users, 'register')
       .mockResolvedValue({ user: { ...user, profileImageUrl: null }, accessToken: 'jwt' });
 
@@ -140,7 +145,7 @@ describe('user routes', () => {
   });
 
   it('rejects registration requests with missing or non-string fields', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .post('/auth/register')
@@ -168,7 +173,7 @@ describe('user routes', () => {
   });
 
   it('returns a bad request for malformed JSON', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .post('/auth/register')
@@ -178,7 +183,7 @@ describe('user routes', () => {
   });
 
   it('returns a conflict when a username or email is already used', async () => {
-    const { app, users } = fixture();
+    const { app, users }: RouteFixture = fixture();
     jest
       .spyOn(users, 'register')
       .mockRejectedValue(new DuplicateUserError('Username or email is already in use.'));
@@ -194,7 +199,7 @@ describe('user routes', () => {
   });
 
   it('logs in and returns an access token', async () => {
-    const { app, users } = fixture();
+    const { app, users }: RouteFixture = fixture();
     jest
       .spyOn(users, 'login')
       .mockResolvedValue({ user: { ...user, profileImageUrl: null }, accessToken: 'jwt' });
@@ -206,7 +211,7 @@ describe('user routes', () => {
   });
 
   it('rejects login requests with missing fields', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .post('/auth/login')
@@ -215,7 +220,7 @@ describe('user routes', () => {
   });
 
   it('returns an unauthorized response for invalid credentials', async () => {
-    const { app, users } = fixture();
+    const { app, users }: RouteFixture = fixture();
     jest
       .spyOn(users, 'login')
       .mockRejectedValue(new InvalidCredentialsError('invalid'));
@@ -229,8 +234,8 @@ describe('user routes', () => {
   it.each([undefined, 'Basic abc', 'Bearer invalid extra'])(
     'requires a well-formed bearer token: %s',
     async (authorization) => {
-      const { app } = fixture();
-      const test = request(app).get('/users/me');
+      const { app }: RouteFixture = fixture();
+      const test: SupertestTest = request(app).get('/users/me');
       if (authorization !== undefined) {
         test.set('Authorization', authorization);
       }
@@ -240,7 +245,7 @@ describe('user routes', () => {
   );
 
   it('returns the authenticated user profile', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .get('/users/me')
       .set('Authorization', 'Bearer valid')
@@ -255,7 +260,7 @@ describe('user routes', () => {
   });
 
   it('rejects a bearer token that fails verification', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .get('/users/me')
       .set('Authorization', 'Bearer invalid')
@@ -263,8 +268,8 @@ describe('user routes', () => {
   });
 
   it('updates the authenticated user username', async () => {
-    const { app } = fixture();
-    const response = await request(app)
+    const { app }: RouteFixture = fixture();
+    const response: SupertestResponse = await request(app)
       .patch('/users/me')
       .set('Authorization', 'Bearer valid')
       .send({ username: 'new-name' })
@@ -273,7 +278,7 @@ describe('user routes', () => {
   });
 
   it('rejects updates that attempt to change protected or multiple fields', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .patch('/users/me')
       .set('Authorization', 'Bearer valid')
@@ -282,7 +287,7 @@ describe('user routes', () => {
   });
 
   it('rejects an update without a username', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .patch('/users/me')
       .set('Authorization', 'Bearer valid')
@@ -291,8 +296,11 @@ describe('user routes', () => {
   });
 
   it('changes a password after current-password reauthentication', async () => {
-    const { app, users } = fixture();
-    const changePassword = jest.spyOn(users, 'changePassword');
+    const { app, users }: RouteFixture = fixture();
+    const changePassword: jest.SpyInstance = jest.spyOn(
+      users,
+      'changePassword',
+    );
 
     await request(app)
       .patch('/users/me/password')
@@ -310,7 +318,7 @@ describe('user routes', () => {
   });
 
   it('rejects a password-change request missing either password', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .patch('/users/me/password')
@@ -325,7 +333,7 @@ describe('user routes', () => {
   });
 
   it('returns unauthorized when the current password does not match', async () => {
-    const { app, users } = fixture();
+    const { app, users }: RouteFixture = fixture();
     jest
       .spyOn(users, 'changePassword')
       .mockRejectedValue(new InvalidCredentialsError('incorrect'));
@@ -341,7 +349,7 @@ describe('user routes', () => {
   });
 
   it('returns not found when the authenticated user does not exist', async () => {
-    const { app, users } = fixture();
+    const { app, users }: RouteFixture = fixture();
     jest
       .spyOn(users, 'getProfile')
       .mockRejectedValue(new UserNotFoundError('User was not found.'));
@@ -353,7 +361,7 @@ describe('user routes', () => {
   });
 
   it('rejects unsupported profile image content types', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .post('/users/me/profile-image')
       .set('Authorization', 'Bearer valid')
@@ -363,7 +371,7 @@ describe('user routes', () => {
   });
 
   it('rejects empty profile image uploads', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .post('/users/me/profile-image')
       .set('Authorization', 'Bearer valid')
@@ -373,7 +381,7 @@ describe('user routes', () => {
   });
 
   it('rejects a parsed profile image body that is not binary', async () => {
-    const rawParser = jest
+    const rawParser: jest.SpyInstance = jest
       .spyOn(express, 'raw')
       .mockImplementation(() => (request, _response, next) => {
         Object.defineProperty(request, 'body', {
@@ -382,7 +390,7 @@ describe('user routes', () => {
         });
         next();
       });
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .post('/users/me/profile-image')
@@ -393,12 +401,14 @@ describe('user routes', () => {
     rawParser.mockRestore();
   });
 
-  it.each(imageCases)('uploads an authenticated $contentType profile image', async ({
-    contentType,
-    image,
-  }) => {
-    const { app, users } = fixture();
-    const upload = jest
+  it.each(imageCases)(
+    'uploads an authenticated $contentType profile image',
+    async ({
+      contentType,
+      image,
+    }: { contentType: ImageContentType; image: number[] }) => {
+    const { app, users }: RouteFixture = fixture();
+    const upload: jest.SpyInstance = jest
       .spyOn(users, 'uploadProfileImage')
       .mockResolvedValue({
         id: user.id,
@@ -407,8 +417,9 @@ describe('user routes', () => {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         profileImageUrl: 'https://thumbor.example/signed/profile.webp',
-      });
-    const imageBuffer = Buffer.from(image);
+        },
+      );
+    const imageBuffer: Buffer = Buffer.from(image);
 
     await request(app)
       .post('/users/me/profile-image')
@@ -420,7 +431,7 @@ describe('user routes', () => {
   });
 
   it('rejects content that does not match its declared image type', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
 
     await request(app)
       .post('/users/me/profile-image')
@@ -433,7 +444,7 @@ describe('user routes', () => {
   });
 
   it('rejects profile image uploads larger than 5 MB', async () => {
-    const { app } = fixture();
+    const { app }: RouteFixture = fixture();
     await request(app)
       .post('/users/me/profile-image')
       .set('Authorization', 'Bearer valid')
@@ -443,8 +454,10 @@ describe('user routes', () => {
   });
 
   it('logs R2 failures and returns a service-unavailable response', async () => {
-    const { app, users } = fixture();
-    const log = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { app, users }: RouteFixture = fixture();
+    const log: jest.SpyInstance = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     jest
       .spyOn(users, 'uploadProfileImage')
       .mockRejectedValue(new ImageStorageError('R2 image upload failed.'));
@@ -464,8 +477,8 @@ describe('user routes', () => {
   });
 
   it('deletes the authenticated account', async () => {
-    const { app, users } = fixture();
-    const deletion = jest.spyOn(users, 'deleteAccount');
+    const { app, users }: RouteFixture = fixture();
+    const deletion: jest.SpyInstance = jest.spyOn(users, 'deleteAccount');
 
     await request(app)
       .delete('/users/me')
@@ -475,8 +488,10 @@ describe('user routes', () => {
   });
 
   it('logs repository failures and returns a service-unavailable response', async () => {
-    const { app, users } = fixture();
-    const log = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { app, users }: RouteFixture = fixture();
+    const log: jest.SpyInstance = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     jest
       .spyOn(users, 'getProfile')
       .mockRejectedValue(new UserRepositoryError('database unavailable'));
@@ -492,8 +507,10 @@ describe('user routes', () => {
   });
 
   it('logs unexpected failures and returns a generic server error', async () => {
-    const { app, users } = fixture();
-    const log = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { app, users }: RouteFixture = fixture();
+    const log: jest.SpyInstance = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     jest.spyOn(users, 'getProfile').mockRejectedValue(new Error('unexpected'));
 
     await request(app)
@@ -507,7 +524,7 @@ describe('user routes', () => {
   });
 
   it('forwards errors after response headers have been sent', async () => {
-    const { app, forwardedError } = fixture();
+    const { app, forwardedError }: RouteFixture = fixture();
 
     await request(app).get('/already-sent').expect(200);
     expect(forwardedError).toHaveBeenCalledWith(
