@@ -84,7 +84,14 @@ describe('application entry point', () => {
         jest.doMock('../app.js', () => ({
           createApp: () => app,
         }));
+        const cleanupStart: jest.Mock = jest.fn();
+        jest.doMock('../profile-image-cleanup-worker.js', () => ({
+          ProfileImageCleanupWorker: jest.fn().mockImplementation(() => ({
+            start: cleanupStart,
+          })),
+        }));
         jest.requireActual('../index.js');
+        expect(cleanupStart).toHaveBeenCalledTimes(1);
       });
 
       expect(listen).toHaveBeenCalledWith(expectedPort, expect.any(Function));

@@ -31,7 +31,8 @@ invalid.
    for `localhost`, `127.0.0.1`, or `::1` during local development.
 2. Create the R2 bucket named by `R2_BUCKET`. Configure a public custom domain
    for profile images and set `R2_PUBLIC_BASE_URL` to that origin so Thumbor can
-   fetch stored objects. Use R2 credentials scoped to that bucket.
+   fetch stored objects. Use R2 credentials scoped to that bucket with object
+   listing and deletion permissions so account cleanup can purge user prefixes.
 3. Configure a deployed Thumbor service with the same `THUMBOR_SECURITY_KEY`
    (at least 32 random bytes) and set `THUMBOR_BASE_URL` to its public HTTPS
    origin.
@@ -128,6 +129,13 @@ are signed with HS256 and expire after 15 minutes.
 Profile uploads store the original image in R2. Profile responses include a
 signed Thumbor URL requesting WebP output at quality 80; Thumbor transforms
 images when they are served rather than persisting a second optimized copy.
+New user images are stored under an owner-specific R2 prefix. Replacing a
+profile image queues its previous object for background cleanup; failed jobs
+remain queued for retry and are logged. Account deletion waits for every object
+under that user's R2 prefix, and any legacy profile image outside the prefix,
+as well as every queued image previously replaced for that user, to be deleted
+before removing the account from the database and responding. Keep the frontend
+loading state active until the deletion request completes.
 
 ## Quality checks
 

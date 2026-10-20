@@ -6,6 +6,7 @@ import {
   UserService,
   type UserRecord,
 } from '../users.js';
+import type { PendingProfileImageCleanup } from '../profile-image-cleanup.js';
 
 const record: UserRecord = {
   id: 'user-123',
@@ -28,15 +29,31 @@ function createFixture() {
     createImageStorageDouble();
   const imageUrls: ReturnType<typeof createImageUrlGeneratorDouble> =
     createImageUrlGeneratorDouble();
+  const imageCleanup: ReturnType<typeof createImageCleanupRepositoryDouble> =
+    createImageCleanupRepositoryDouble();
   const service: UserService = new UserService(
     users,
     passwords,
     tokens,
     images,
     imageUrls,
+    imageCleanup,
   );
 
-  return { service, users, passwords, tokens, images, imageUrls };
+  return { service, users, passwords, tokens, images, imageUrls, imageCleanup };
+}
+
+function createImageCleanupRepositoryDouble() {
+  return {
+    listPending: jest.fn(
+      (): Promise<PendingProfileImageCleanup[]> => Promise.resolve([]),
+    ),
+    listPendingForUser: jest.fn(
+      (): Promise<PendingProfileImageCleanup[]> => Promise.resolve([]),
+    ),
+    complete: jest.fn(() => Promise.resolve()),
+    retry: jest.fn(() => Promise.resolve()),
+  };
 }
 
 function createUserRepositoryDouble() {
@@ -86,10 +103,11 @@ function createTokenServiceDouble() {
 
 function createImageStorageDouble() {
   return {
-    store: jest.fn(
-      () => Promise.resolve('profiles/new.webp'),
+    store: jest.fn((_userId: string) =>
+      Promise.resolve(`users/${_userId}/images/new.webp`),
     ),
     delete: jest.fn(() => Promise.resolve()),
+    deleteUserImages: jest.fn(() => Promise.resolve()),
   };
 }
 
@@ -407,7 +425,7 @@ describe('UserService', () => {
     expect(fixture.images.store).not.toHaveBeenCalled();
   });
 
-  it('stores an image, updates the profile and removes the previous image', async () => {
+  it('stores an image and updates the profile without deleting the previous image directly', async () => {
     const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue({
       ...record,
@@ -421,9 +439,14 @@ describe('UserService', () => {
         'image/webp',
       ),
     ).resolves.toMatchObject({
-      profileImageUrl: 'https://thumbor.example/profiles/new.webp',
+      profileImageUrl: 'https://thumbor.example/users/user-123/images/new.webp',
     });
-    expect(fixture.images.delete).toHaveBeenCalledWith('profiles/old.webp');
+    expect(fixture.images.store).toHaveBeenCalledWith(
+      record.id,
+      expect.any(Buffer),
+      'image/webp',
+    );
+    expect(fixture.images.delete).not.toHaveBeenCalled();
   });
 
   it('removes an unreferenced image when the profile update reports no user', async () => {
@@ -437,18 +460,23 @@ describe('UserService', () => {
         'image/png',
       ),
     ).rejects.toBeInstanceOf(UserNotFoundError);
-    expect(fixture.images.delete).toHaveBeenCalledWith('profiles/new.webp');
+    expect(fixture.images.delete).toHaveBeenCalledWith(
+      'users/user-123/images/new.webp',
+    );
   });
 
-  it('deletes a user without an image', async () => {
+  it('deletes a user without a legacy profile image after purging its image prefix', async () => {
     const fixture: Fixture = createFixture();
 
     await expect(fixture.service.deleteAccount(record.id)).resolves.toBeUndefined();
+    expect(fixture.images.deleteUserImages.mock.invocationCallOrder[0]).toBeLessThan(
+      fixture.users.delete.mock.invocationCallOrder[0] ?? Infinity,
+    );
     expect(fixture.users.delete).toHaveBeenCalledWith(record.id);
-    expect(fixture.images.delete).not.toHaveBeenCalled();
+    expect(fixture.images.deleteUserImages).toHaveBeenCalledWith(record.id);
   });
 
-  it('deletes a user image after deleting the account', async () => {
+  it('deletes every user image and a legacy profile image before deleting the account', async () => {
     const fixture: Fixture = createFixture();
     fixture.users.findById.mockResolvedValue({
       ...record,
@@ -456,7 +484,99 @@ describe('UserService', () => {
     });
 
     await fixture.service.deleteAccount(record.id);
-    expect(fixture.images.delete).toHaveBeenCalledWith('profiles/avatar.webp');
+    expect(fixture.users.delete).toHaveBeenCalledWith(record.id);
+    expect(fixture.images.deleteUserImages).toHaveBeenCalledWith(record.id);
+    expect(fixture.images.delete).toHaveBeenCalledWith(
+      'profiles/avatar.webp',
+    );
+    expect(fixture.images.deleteUserImages.mock.invocationCallOrder[0]).toBeLessThan(
+      fixture.images.delete.mock.invocationCallOrder[0] ?? Infinity,
+    );
+    expect(fixture.images.delete.mock.invocationCallOrder[0]).toBeLessThan(
+      fixture.users.delete.mock.invocationCallOrder[0] ?? Infinity,
+    );
+  });
+
+  it('deletes queued historical images before removing the account', async () => {
+    const fixture: Fixture = createFixture();
+    fixture.imageCleanup.listPendingForUser
+      .mockResolvedValueOnce([
+        {
+          id: 'cleanup-1',
+          objectKey: 'profiles/previously-replaced.webp',
+          userId: record.id,
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    await fixture.service.deleteAccount(record.id);
+
+    expect(fixture.images.delete).toHaveBeenCalledWith(
+      'profiles/previously-replaced.webp',
+    );
+    expect(fixture.imageCleanup.complete).toHaveBeenCalledWith('cleanup-1');
+    expect(fixture.users.delete.mock.invocationCallOrder[0]).toBeGreaterThan(
+      fixture.imageCleanup.complete.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('does not delete the account if a queued historical image cannot be removed', async () => {
+    const fixture: Fixture = createFixture();
+    fixture.imageCleanup.listPendingForUser.mockResolvedValue([
+      {
+        id: 'cleanup-1',
+        objectKey: 'profiles/previously-replaced.webp',
+        userId: record.id,
+      },
+    ]);
+    fixture.images.delete.mockRejectedValue(new Error('R2 unavailable'));
+
+    await expect(fixture.service.deleteAccount(record.id)).rejects.toThrow(
+      'R2 unavailable',
+    );
+    expect(fixture.imageCleanup.complete).not.toHaveBeenCalled();
+    expect(fixture.users.delete).not.toHaveBeenCalled();
+  });
+
+  it('does not delete the account when deleting the image prefix fails', async () => {
+    const fixture: Fixture = createFixture();
+    fixture.images.deleteUserImages.mockRejectedValue(
+      new Error('R2 unavailable'),
+    );
+
+    await expect(fixture.service.deleteAccount(record.id)).rejects.toThrow(
+      'R2 unavailable',
+    );
+    expect(fixture.users.delete).not.toHaveBeenCalled();
+  });
+
+  it('does not delete the account when deleting a legacy profile image fails', async () => {
+    const fixture: Fixture = createFixture();
+    fixture.users.findById.mockResolvedValue({
+      ...record,
+      profileImageKey: 'profiles/avatar.webp',
+    });
+    fixture.images.delete.mockRejectedValue(new Error('R2 unavailable'));
+
+    await expect(fixture.service.deleteAccount(record.id)).rejects.toThrow(
+      'R2 unavailable',
+    );
+    expect(fixture.images.deleteUserImages).toHaveBeenCalledWith(record.id);
+    expect(fixture.users.delete).not.toHaveBeenCalled();
+  });
+
+  it('does not separately delete a profile image inside the user prefix', async () => {
+    const fixture: Fixture = createFixture();
+    fixture.users.findById.mockResolvedValue({
+      ...record,
+      profileImageKey: `users/${record.id}/images/avatar.webp`,
+    });
+
+    await fixture.service.deleteAccount(record.id);
+
+    expect(fixture.images.deleteUserImages).toHaveBeenCalledWith(record.id);
+    expect(fixture.images.delete).not.toHaveBeenCalled();
+    expect(fixture.users.delete).toHaveBeenCalledWith(record.id);
   });
 
   it('returns not found when the account is already absent', async () => {

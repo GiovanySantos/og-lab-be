@@ -1,3 +1,8 @@
+import type {
+  PendingProfileImageCleanup,
+  ProfileImageCleanupRepository,
+} from './profile-image-cleanup.js';
+
 export type UserRecord = {
   id: string;
   username: string;
@@ -39,8 +44,13 @@ export interface TokenService {
 }
 
 export interface ImageStorage {
-  store(image: Buffer, contentType: ImageContentType): Promise<string>;
+  store(
+    userId: string,
+    image: Buffer,
+    contentType: ImageContentType,
+  ): Promise<string>;
   delete(key: string): Promise<void>;
+  deleteUserImages(userId: string): Promise<void>;
 }
 
 export interface ImageUrlGenerator {
@@ -69,6 +79,7 @@ export class UserService {
     private readonly tokens: TokenService,
     private readonly images: ImageStorage,
     private readonly imageUrls: ImageUrlGenerator,
+    private readonly imageCleanup: ProfileImageCleanupRepository,
   ) {}
 
   public async register(input: {
@@ -165,8 +176,12 @@ export class UserService {
       throw new UserInputError('Image must be between 1 byte and 5 MB.');
     }
 
-    const existing: UserRecord = await this.getUser(userId);
-    const newKey: string = await this.images.store(image, contentType);
+    await this.getUser(userId);
+    const newKey: string = await this.images.store(
+      userId,
+      image,
+      contentType,
+    );
     const updated: UserRecord | null = await this.users.updateProfileImage(
       userId,
       newKey,
@@ -177,23 +192,36 @@ export class UserService {
       throw new UserNotFoundError('User was not found.');
     }
 
-    if (existing.profileImageKey !== null) {
-      await this.images.delete(existing.profileImageKey);
-    }
-
     return this.toPublicUser(updated);
   }
 
   public async deleteAccount(userId: string): Promise<void> {
     const user: UserRecord = await this.getUser(userId);
+    await this.images.deleteUserImages(userId);
+
+    if (
+      user.profileImageKey !== null &&
+      !user.profileImageKey.startsWith(`users/${userId}/images/`)
+    ) {
+      await this.images.delete(user.profileImageKey);
+    }
+
+    let pending: PendingProfileImageCleanup[] =
+      await this.imageCleanup.listPendingForUser(userId);
+
+    while (pending.length > 0) {
+      for (const job of pending) {
+        await this.images.delete(job.objectKey);
+        await this.imageCleanup.complete(job.id);
+      }
+
+      pending = await this.imageCleanup.listPendingForUser(userId);
+    }
+
     const deleted: boolean = await this.users.delete(userId);
 
     if (!deleted) {
       throw new UserNotFoundError('User was not found.');
-    }
-
-    if (user.profileImageKey !== null) {
-      await this.images.delete(user.profileImageKey);
     }
   }
 

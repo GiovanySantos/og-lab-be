@@ -37,10 +37,17 @@ describe('createApp', () => {
         verify: () => 'user-1',
       },
       {
-        store: () => Promise.resolve('profiles/image.jpg'),
+        store: () => Promise.resolve('users/user-1/images/image.jpg'),
         delete: () => Promise.resolve(),
+        deleteUserImages: () => Promise.resolve(),
       },
       { create: () => 'https://images.example.com/profile.webp' },
+      {
+        listPending: () => Promise.resolve([]),
+        listPendingForUser: () => Promise.resolve([]),
+        complete: () => Promise.resolve(),
+        retry: () => Promise.resolve(),
+      },
     );
 
     return createApp({

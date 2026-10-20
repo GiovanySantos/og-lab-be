@@ -76,10 +76,17 @@ function fixture() {
       },
     },
     {
-      store: () => Promise.resolve('profiles/new.webp'),
+      store: () => Promise.resolve('users/user-123/images/new.webp'),
       delete: () => Promise.resolve(),
+      deleteUserImages: () => Promise.resolve(),
     },
     { create: () => 'https://thumbor.example/signed/profile.webp' },
+    {
+      listPending: () => Promise.resolve([]),
+      listPendingForUser: () => Promise.resolve([]),
+      complete: () => Promise.resolve(),
+      retry: () => Promise.resolve(),
+    },
   );
   const app: Express = express();
   const forwardedError: jest.Mock = jest.fn();
