@@ -22,19 +22,19 @@ The intended runtime call flow for features that use domain and data-access laye
 
 `routes/entry points → domain → repositories → clients/adapters → external services`
 
-1. **Routes/entry points:** receive and validate transport input, call the appropriate domain use case, and translate its result into a transport response. They do not implement business rules or access repositories or clients directly. The current implementation has an Express `/health` route in `src/app.ts`; it does not yet implement the feature-layer flow below.
-2. **Domain:** implements business rules and use cases. It declares the small repository ports its use cases consume, receives their implementations through injection, and does not know vendor protocols, SDKs, or vendor-specific models.
-3. **Repositories:** implement the domain's repository ports. They receive required clients through injection, convert external data into domain contracts, and keep integration details out of the domain.
-4. **Clients/adapters:** encapsulate communication with external services, such as Supabase REST, GraphQL, or database queries, and in-memory or Redis cache implementations. They contain no business rules.
+1. **Routes/entry points:** receive and validate transport input, call the appropriate domain use case, and translate its result into a transport response. They do not implement business rules or access repositories or clients directly. `src/app.ts` exposes `/health` and mounts the authentication and user-profile routes from `src/routes/user-routes.ts`.
+2. **Domain:** implements business rules and use cases. `src/domain/users.ts` owns user registration, login, self-service profile management, password changes, account deletion, and the ports it consumes for persistence, password hashing, tokens, and images. The domain receives implementations through injection and does not know vendor protocols, SDKs, or vendor-specific models.
+3. **Repositories:** implement the domain's repository ports. `SupabaseUserRepository` maps user records to/from the Supabase REST contract and receives its `SupabaseRestClient` through injection.
+4. **Clients/adapters:** encapsulate communication with external services and security libraries. `FetchSupabaseRestClient` handles Supabase REST requests; `AwsS3ObjectClient` and `R2ImageStorage` handle Cloudflare R2 objects through the S3-compatible API; `ThumborImageUrl` creates signed, optimized image URLs; and `security.ts` adapts Node.js scrypt and JWT operations. They contain no business rules.
 
-The feed flow is a future architecture example, not an implemented feature: a future feed route calls the feed use case; that use case calls its injected feed repository port; the concrete repository adapter implements that port, calls its injected Supabase client, and maps the response to the domain contract. No domain, repository, client, or Supabase integration is implemented yet.
+The feed flow remains a future architecture example: a future feed route calls the feed use case; that use case calls its injected feed repository port; the concrete repository adapter implements that port, calls its injected Supabase client, and maps the response to the domain contract. The user/authentication flow is implemented as described above.
 
 ## Dependency injection and direction
 
 - Inject the dependencies required by each layer; avoid implicit singletons, global service access, and service locators.
 - The domain owns repository port declarations because the domain defines the needs of its use cases. Repository adapters implement those ports; the domain must not import repository implementations.
 - Each port is declared by the layer that consumes it: repository ports belong to the domain, and client ports belong to the repository/adapters that call them. Concrete clients implement those client ports.
-- At runtime, features using these layers should call domain use cases from entry points, which call injected repository ports; adapters call injected client ports. At source level, keep concrete implementations at the edges and wire them at an application composition root. The current application entry point is `src/index.ts`; do not infer that the future domain or adapter layers already exist.
+- At runtime, features should call domain use cases from entry points, which call injected repository ports; adapters call injected client ports. At source level, keep concrete implementations at the edges and wire them at the application composition root. `src/index.ts` is the composition root for the user/authentication flow; do not infer that the future feed domain or adapters already exist.
 - Keep contracts small and oriented around their consumers. Do not expose SDKs or vendor types across layers.
 - Do not create dependencies in business rules. If a needed contract is undecided, record the open question rather than assuming a business rule.
 

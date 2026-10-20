@@ -8,8 +8,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
-    "watch": "tsc-watch --project tsconfig.build.json --onSuccess \"node dist/index.js\"",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "watch": "tsc-watch --project tsconfig.build.json --onSuccess \"node --env-file-if-exists=.env dist/index.js\"",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "jest --coverage",
@@ -17,7 +17,9 @@
     "pipeline": "npm ci && npm run check && npm audit --audit-level=moderate"
   },
   "dependencies": {
-    "express": "^5.3.0"
+    "@aws-sdk/client-s3": "^3.1153.0",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3"
   },
   "overrides": {
     "js-yaml@3.15.2": {
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.2.1",
     "eslint": "^10.13.0",

@@ -4,12 +4,16 @@ import express, {
   type Request,
   type Response,
 } from 'express';
+import { UserService, type TokenService } from './domain/users.js';
+import { createAuthRouter, createErrorHandler, createUserRouter } from './routes/user-routes.js';
 
 type HealthResponse = {
   status: 'ok';
 };
 
-export function createApp(): Express {
+export function createApp(
+  dependencies: { users: UserService; tokens: TokenService },
+): Express {
   const app = express();
 
   app.use(
@@ -30,12 +34,18 @@ export function createApp(): Express {
     },
   );
 
+  app.use(express.json({ limit: '16kb', strict: false }));
+  app.use('/auth', createAuthRouter(dependencies.users));
+  app.use('/users', createUserRouter(dependencies.users, dependencies.tokens));
+
   app.get(
     '/health',
     (_request: Request, response: Response<HealthResponse>): void => {
       response.status(200).json({ status: 'ok' });
     },
   );
+
+  app.use(createErrorHandler());
 
   return app;
 }
