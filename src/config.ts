@@ -22,7 +22,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
 
   return {
     port,
-    supabaseUrl: requiredUrl(environment, 'SUPABASE_URL'),
+    supabaseUrl: requiredSupabaseUrl(environment),
     supabaseServiceRoleKey: requiredValue(
       environment,
       'SUPABASE_SERVICE_ROLE_KEY',
@@ -65,4 +65,22 @@ function requiredUrl(environment: NodeJS.ProcessEnv, name: string): string {
   } catch {
     throw new Error(`${name} must be a valid HTTP or HTTPS URL.`);
   }
+}
+
+function requiredSupabaseUrl(environment: NodeJS.ProcessEnv): string {
+  const value: string = requiredUrl(environment, 'SUPABASE_URL');
+  const parsed: URL = new URL(value);
+  const hostname: string = parsed.hostname.toLowerCase();
+  const isLoopback: boolean =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]';
+
+  if (parsed.protocol === 'http:' && !isLoopback) {
+    throw new Error(
+      'SUPABASE_URL must use HTTPS; HTTP is allowed only for localhost, 127.0.0.1, or ::1.',
+    );
+  }
+
+  return value;
 }

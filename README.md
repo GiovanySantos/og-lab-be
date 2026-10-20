@@ -27,6 +27,8 @@ invalid.
 1. Apply the database schema using the Supabase CLI migration workflow below.
    The `users` table has row-level security enabled and grants access only to
    the server-side `service_role`.
+   Use an HTTPS Supabase URL in deployed environments; HTTP is accepted only
+   for `localhost`, `127.0.0.1`, or `::1` during local development.
 2. Create the R2 bucket named by `R2_BUCKET`. Configure a public custom domain
    for profile images and set `R2_PUBLIC_BASE_URL` to that origin so Thumbor can
    fetch stored objects. Use R2 credentials scoped to that bucket.

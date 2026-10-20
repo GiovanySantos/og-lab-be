@@ -36,6 +36,39 @@ describe('loadConfig', () => {
     expect(loadConfig({ ...validEnvironment, PORT: '4317' }).port).toBe(4317);
   });
 
+  it.each([
+    'http://localhost:54321/',
+    'http://127.0.0.1:54321/',
+    'http://[::1]:54321/',
+  ])(
+    'accepts local Supabase URL %s',
+    (supabaseUrl: string) => {
+      expect(
+        loadConfig({
+          ...validEnvironment,
+          SUPABASE_URL: supabaseUrl,
+        }).supabaseUrl,
+      ).toBe(supabaseUrl.replace(/\/+$/, ''));
+    },
+  );
+
+  it.each([
+    'http://project.supabase.co',
+    'HTTP://project.supabase.co',
+  ])(
+    'rejects non-loopback Supabase URL %s over HTTP',
+    (supabaseUrl: string) => {
+      expect(() =>
+        loadConfig({
+          ...validEnvironment,
+          SUPABASE_URL: supabaseUrl,
+        }),
+      ).toThrow(
+        'SUPABASE_URL must use HTTPS; HTTP is allowed only for localhost, 127.0.0.1, or ::1.',
+      );
+    },
+  );
+
   it.each(['0', '65536', '1.5', 'not-a-port'])(
     'rejects invalid port %s',
     (port) => {
