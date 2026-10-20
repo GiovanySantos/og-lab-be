@@ -11,7 +11,9 @@ The `pipeline` script runs these steps in order and stops immediately on
 failure:
 
 1. `npm ci` installs the exact dependency tree recorded in `package-lock.json`.
-2. `npm run lint` rejects type escapes, assertions, and lint suppressions.
+2. `npm run lint` requires explicit type annotations on TypeScript variable
+   declarations and destructured parameters, and rejects type escapes,
+   assertions, and lint suppressions.
 3. `npm run typecheck` checks the application and tests with strict TypeScript.
 4. `npm test -- --ci` runs Jest and enforces 100% statement, branch, function,
    and line coverage. Jest discovers `*.test.ts` files inside source
@@ -20,6 +22,11 @@ failure:
 5. `npm run build` compiles the production application.
 6. `npm audit --audit-level=moderate` fails on moderate- or higher-severity
    dependency advisories.
+
+Database migrations use the project-local Supabase CLI. Run them explicitly
+with the `db:*` npm scripts documented in the README; database migrations are
+not part of this quality pipeline and are never applied automatically by
+starting the application.
 
 ## Pull requests and pushes
 

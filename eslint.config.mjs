@@ -53,6 +53,14 @@ export default tseslint.config(
           },
         },
       ],
+      '@typescript-eslint/typedef': [
+        'error',
+        {
+          arrayDestructuring: true,
+          objectDestructuring: true,
+          variableDeclaration: true,
+        },
+      ],
       'no-restricted-syntax': [
         'error',
         {

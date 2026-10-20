@@ -1,21 +1,77 @@
 import request from 'supertest';
+import type { Express } from 'express';
 import { createApp } from '../app.js';
+import {
+  UserService,
+  type UserRecord,
+} from '../domain/users.js';
 
 describe('createApp', () => {
+  const app: () => Express = () => {
+    const user: UserRecord = {
+      id: 'user-1',
+      username: 'member',
+      email: 'member@example.com',
+      passwordHash: 'hash',
+      profileImageKey: null,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    };
+    const service: UserService = new UserService(
+      {
+        create: () => Promise.resolve(user),
+        findByEmail: () => Promise.resolve(user),
+        findById: () => Promise.resolve(user),
+        updateUsername: () => Promise.resolve(user),
+        updatePasswordHash: (_id, passwordHash) =>
+          Promise.resolve({ ...user, passwordHash }),
+        updateProfileImage: () => Promise.resolve(user),
+        delete: () => Promise.resolve(true),
+      },
+      {
+        hash: () => Promise.resolve('hash'),
+        verify: () => Promise.resolve(true),
+      },
+      {
+        issue: () => 'token',
+        verify: () => 'user-1',
+      },
+      {
+        store: () => Promise.resolve('users/user-1/images/image.jpg'),
+        delete: () => Promise.resolve(),
+        deleteUserImages: () => Promise.resolve(),
+      },
+      { create: () => 'https://images.example.com/profile.webp' },
+      {
+        listPending: () => Promise.resolve([]),
+        listPendingForUser: () => Promise.resolve([]),
+        complete: () => Promise.resolve(),
+        retry: () => Promise.resolve(),
+      },
+    );
+
+    return createApp({
+      users: service,
+      tokens: { issue: () => 'token', verify: () => 'user-1' },
+    });
+  };
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
   it('returns a healthy status response', async () => {
-    await request(createApp())
+    await request(app())
       .get('/health')
       .expect(200, { status: 'ok' });
   });
 
   it('logs the method, path, status, and duration of completed requests', async () => {
-    const log = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const log: jest.SpyInstance = jest
+      .spyOn(console, 'info')
+      .mockImplementation(() => undefined);
 
-    await request(createApp())
+    await request(app())
       .get('/health')
       .expect(200, { status: 'ok' });
 

@@ -8,6 +8,7 @@ Before changing dependency manifests, lockfiles, package patches, overrides, or 
 
 - Use English for all project artifacts and agent communication, including source code, tests, comments, documentation, commit messages, branch/PR descriptions, and AI usage disclosures. Use another language only when explicitly requested or required by an external interface.
 - The selected initial stack is Node.js 24+, TypeScript 6, Express 5, Jest 30 with ts-jest 29, ESLint 10, and npm. Check `package.json` and the checked-in tool configurations for current versions and commands; do not rely on stale version examples in guidance.
+- ESLint requires explicit type annotations on TypeScript variable declarations and destructured parameters, including test files. Keep annotations specific and do not weaken the rule to allow inferred declarations.
 - The application is implemented under `src/`; place Jest unit tests in a `__tests__` directory within the source path they cover (for example, `src/__tests__/` for files directly under `src/`).
 - GitHub Actions CI/CD is currently disabled. Before pushing any branch or opening/updating a pull request, run `npm run pipeline` and require it to pass. See `docs/ci-cd.md` for the exact checks and current enforcement limitations.
 - Supabase is the first external service; the architecture must allow other services to be added without coupling business rules to vendors.
